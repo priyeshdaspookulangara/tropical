@@ -1,0 +1,28 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+header h1 {
+    font-weight: 300;
+}
+
+footer {
+    margin-top: 50px;
+}
+
+.product-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+#inquiry-form-container {
+    border-radius: 8px;
+}
