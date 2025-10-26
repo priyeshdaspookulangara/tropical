@@ -77,6 +77,7 @@ while ($row = mysqli_fetch_assoc($result)) {
             <nav class="nav justify-content-center">
                 <a class="nav-link text-white" href="page.php?slug=about">About Us</a>
                 <a class="nav-link text-white" href="page.php?slug=values">Our Values</a>
+                <a class="nav-link text-white" href="page.php?slug=services">Our Services</a>
                 <a class="nav-link text-white" href="page.php?slug=contact">Contact Us</a>
             </nav>
         </div>

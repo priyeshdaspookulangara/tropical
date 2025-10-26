@@ -71,4 +71,5 @@ CREATE TABLE `static_content` (
 INSERT INTO `static_content` (`page_slug`, `title`, `content_body`, `last_updated_by`) VALUES
 ('about', 'About Us', '<p>This is the default content for the About Us page. Please update it from the admin panel.</p>', 'system'),
 ('values', 'Our Values', '<p>This is the default content for the Our Values page. Please update it from the admin panel.</p>', 'system'),
-('contact', 'Contact Us', '<p>This is the default content for the Contact Us page. Please update it from the admin panel.</p>', 'system');
+('contact', 'Contact Us', '<p>This is the default content for the Contact Us page. Please update it from the admin panel.</p>', 'system'),
+('services', 'Our Services', '<p>This is the default content for the Our Services page. Please update it from the admin panel.</p>', 'system');
