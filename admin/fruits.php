@@ -1,12 +1,7 @@
 <?php
-session_start();
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/functions.php';
-
-if (!isset($_SESSION['admin_user'])) {
-    header('Location: login.php');
-    exit;
-}
+require_once __DIR__ . '/includes/header.php';
 
 // Fetch categories and selling types for forms
 $categories_sql = "SELECT * FROM categories";
@@ -42,7 +37,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $image_path = 'uploads/' . $image_name;
                 move_uploaded_file($_FILES['image']['tmp_name'], __DIR__ . '/../' . $image_path);
             } else {
-                // Handle invalid file type
                 $error = "Invalid file type. Only JPG, PNG, and GIF are allowed.";
             }
         }
@@ -82,7 +76,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 move_uploaded_file($_FILES['image']['tmp_name'], __DIR__ . '/../' . $image_path);
                 $image_sql = ", image = '$image_path'";
             } else {
-                // Handle invalid file type
                 $error = "Invalid file type. Only JPG, PNG, and GIF are allowed.";
             }
         }
@@ -124,158 +117,151 @@ while ($row = mysqli_fetch_assoc($fruit_selling_types_result)) {
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Fruits</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-<div class="container mt-4">
-    <h2>Manage Fruits</h2>
-    <a href="index.php" class="btn btn-secondary mb-3">Back to Dashboard</a>
+<h1 class="mt-4">Manage Fruits</h1>
 
-    <!-- Add Fruit Form -->
-    <div class="card mb-4">
-        <div class="card-header">Add New Fruit</div>
-        <div class="card-body">
-            <form action="fruits.php" method="post" enctype="multipart/form-data">
-                <div class="mb-3">
-                    <label for="name" class="form-label">Fruit Name</label>
-                    <input type="text" name="name" class="form-control" required>
+<?php if (isset($error)): ?>
+    <div class="alert alert-danger"><?php echo $error; ?></div>
+<?php endif; ?>
+
+<!-- Add Fruit Form -->
+<div class="card mb-4">
+    <div class="card-header">Add New Fruit</div>
+    <div class="card-body">
+        <form action="fruits.php" method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="name" class="form-label">Fruit Name</label>
+                <input type="text" name="name" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="category_id" class="form-label">Category</label>
+                <select name="category_id" class="form-select" required>
+                    <?php foreach ($categories as $category): ?>
+                        <option value="<?php echo $category['id']; ?>"><?php echo htmlspecialchars($category['name']); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea name="description" class="form-control" required></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="image" class="form-label">Image</label>
+                <input type="file" name="image" class="form-control">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Selling Types</label>
+                <div>
+                    <?php foreach ($selling_types as $type): ?>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="selling_types[]" value="<?php echo $type['id']; ?>">
+                            <label class="form-check-label"><?php echo htmlspecialchars($type['name']); ?></label>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
-                <div class="mb-3">
-                    <label for="category_id" class="form-label">Category</label>
-                    <select name="category_id" class="form-select" required>
-                        <?php foreach ($categories as $category): ?>
-                            <option value="<?php echo $category['id']; ?>"><?php echo htmlspecialchars($category['name']); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="description" class="form-label">Description</label>
-                    <textarea name="description" class="form-control" required></textarea>
-                </div>
-                <div class="mb-3">
-                    <label for="image" class="form-label">Image</label>
-                    <input type="file" name="image" class="form-control">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Selling Types</label>
-                    <div>
-                        <?php foreach ($selling_types as $type): ?>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" name="selling_types[]" value="<?php echo $type['id']; ?>">
-                                <label class="form-check-label"><?php echo htmlspecialchars($type['name']); ?></label>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-                <button type="submit" name="add" class="btn btn-primary">Add Fruit</button>
-            </form>
-        </div>
+            </div>
+            <button type="submit" name="add" class="btn btn-primary">Add Fruit</button>
+        </form>
     </div>
+</div>
 
-    <!-- Fruits Table -->
-    <div class="card">
-        <div class="card-header">Existing Fruits</div>
-        <div class="card-body">
-            <table class="table table-striped">
-                <thead>
+<!-- Fruits Table -->
+<div class="card">
+    <div class="card-header">Existing Fruits</div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Image</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($fruits as $fruit): ?>
                 <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Image</th>
-                    <th>Actions</th>
+                    <td><?php echo $fruit['id']; ?></td>
+                    <td><?php echo htmlspecialchars($fruit['name']); ?></td>
+                    <td><?php echo htmlspecialchars($fruit['category_name']); ?></td>
+                    <td>
+                        <?php if ($fruit['image']): ?>
+                            <img src="../<?php echo htmlspecialchars($fruit['image']); ?>" alt="<?php echo htmlspecialchars($fruit['name']); ?>" width="50">
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal<?php echo $fruit['id']; ?>">Edit</button>
+                        <form action="fruits.php" method="post" class="d-inline">
+                            <input type="hidden" name="id" value="<?php echo $fruit['id']; ?>">
+                            <button type="submit" name="delete" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                        </form>
+                    </td>
                 </tr>
-                </thead>
-                <tbody>
-                <?php foreach ($fruits as $fruit): ?>
-                    <tr>
-                        <td><?php echo $fruit['id']; ?></td>
-                        <td><?php echo htmlspecialchars($fruit['name']); ?></td>
-                        <td><?php echo htmlspecialchars($fruit['category_name']); ?></td>
-                        <td>
-                            <?php if ($fruit['image']): ?>
-                                <img src="../<?php echo htmlspecialchars($fruit['image']); ?>" alt="<?php echo htmlspecialchars($fruit['name']); ?>" width="50">
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal<?php echo $fruit['id']; ?>">Edit</button>
-                            <form action="fruits.php" method="post" class="d-inline">
-                                <input type="hidden" name="id" value="<?php echo $fruit['id']; ?>">
-                                <button type="submit" name="delete" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
 
-                    <!-- Edit Modal -->
-                    <div class="modal fade" id="editModal<?php echo $fruit['id']; ?>" tabindex="-1">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Edit Fruit</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <form action="fruits.php" method="post" enctype="multipart/form-data">
-                                        <input type="hidden" name="id" value="<?php echo $fruit['id']; ?>">
-                                        <div class="mb-3">
-                                            <label class="form-label">Fruit Name</label>
-                                            <input type="text" name="name" class="form-control" value="<?php echo htmlspecialchars($fruit['name']); ?>" required>
+                <!-- Edit Modal -->
+                <div class="modal fade" id="editModal<?php echo $fruit['id']; ?>" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Edit Fruit</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form action="fruits.php" method="post" enctype="multipart/form-data">
+                                    <input type="hidden" name="id" value="<?php echo $fruit['id']; ?>">
+                                    <div class="mb-3">
+                                        <label class="form-label">Fruit Name</label>
+                                        <input type="text" name="name" class="form-control" value="<?php echo htmlspecialchars($fruit['name']); ?>" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Category</label>
+                                        <select name="category_id" class="form-select" required>
+                                            <?php foreach ($categories as $category): ?>
+                                                <option value="<?php echo $category['id']; ?>" <?php echo ($category['id'] == $fruit['category_id']) ? 'selected' : ''; ?>>
+                                                    <?php echo htmlspecialchars($category['name']); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Description</label>
+                                        <textarea name="description" class="form-control" required><?php echo htmlspecialchars($fruit['description']); ?></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Current Image</label>
+                                        <div>
+                                            <?php if ($fruit['image']): ?>
+                                                <img src="../<?php echo htmlspecialchars($fruit['image']); ?>" width="100">
+                                            <?php endif; ?>
                                         </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Category</label>
-                                            <select name="category_id" class="form-select" required>
-                                                <?php foreach ($categories as $category): ?>
-                                                    <option value="<?php echo $category['id']; ?>" <?php echo ($category['id'] == $fruit['category_id']) ? 'selected' : ''; ?>>
-                                                        <?php echo htmlspecialchars($category['name']); ?>
-                                                    </option>
-                                                <?php endforeach; ?>
-                                            </select>
+                                        <label class="form-label mt-2">New Image (optional)</label>
+                                        <input type="file" name="image" class="form-control">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Selling Types</label>
+                                        <div>
+                                            <?php
+                                            $fruit_selling_type_ids = $fruit_selling_types[$fruit['id']] ?? [];
+                                            foreach ($selling_types as $type): ?>
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input" type="checkbox" name="selling_types[]" value="<?php echo $type['id']; ?>" <?php echo in_array($type['id'], $fruit_selling_type_ids) ? 'checked' : ''; ?>>
+                                                    <label class="form-check-label"><?php echo htmlspecialchars($type['name']); ?></label>
+                                                </div>
+                                            <?php endforeach; ?>
                                         </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Description</label>
-                                            <textarea name="description" class="form-control" required><?php echo htmlspecialchars($fruit['description']); ?></textarea>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Current Image</label>
-                                            <div>
-                                                <?php if ($fruit['image']): ?>
-                                                    <img src="../<?php echo htmlspecialchars($fruit['image']); ?>" width="100">
-                                                <?php endif; ?>
-                                            </div>
-                                            <label class="form-label mt-2">New Image (optional)</label>
-                                            <input type="file" name="image" class="form-control">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Selling Types</label>
-                                            <div>
-                                                <?php
-                                                $fruit_selling_type_ids = $fruit_selling_types[$fruit['id']] ?? [];
-                                                foreach ($selling_types as $type): ?>
-                                                    <div class="form-check form-check-inline">
-                                                        <input class="form-check-input" type="checkbox" name="selling_types[]" value="<?php echo $type['id']; ?>" <?php echo in_array($type['id'], $fruit_selling_type_ids) ? 'checked' : ''; ?>>
-                                                        <label class="form-check-label"><?php echo htmlspecialchars($type['name']); ?></label>
-                                                    </div>
-                                                <?php endforeach; ?>
-                                            </div>
-                                        </div>
-                                        <button type="submit" name="edit" class="btn btn-primary">Save changes</button>
-                                    </form>
-                                </div>
+                                    </div>
+                                    <button type="submit" name="edit" class="btn btn-primary">Save changes</button>
+                                </form>
                             </div>
                         </div>
                     </div>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+                </div>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
     </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+
+<?php
+require_once __DIR__ . '/includes/footer.php';
+?>

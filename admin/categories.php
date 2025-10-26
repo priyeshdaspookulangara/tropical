@@ -1,12 +1,7 @@
 <?php
-session_start();
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/functions.php';
-
-if (!isset($_SESSION['admin_user'])) {
-    header('Location: login.php');
-    exit;
-}
+require_once __DIR__ . '/includes/header.php';
 
 // Handle form submissions for add, edit, and delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -34,86 +29,75 @@ $result = mysqli_query($conn, $sql);
 $categories = mysqli_fetch_all($result, MYSQLI_ASSOC);
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Categories</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container mt-4">
-        <h2>Manage Categories</h2>
-        <a href="index.php" class="btn btn-secondary mb-3">Back to Dashboard</a>
+<h1 class="mt-4">Manage Categories</h1>
 
-        <!-- Add Category Form -->
-        <div class="card mb-4">
-            <div class="card-header">Add New Category</div>
-            <div class="card-body">
-                <form action="categories.php" method="post">
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Category Name</label>
-                        <input type="text" name="name" id="name" class="form-control" required>
-                    </div>
-                    <button type="submit" name="add" class="btn btn-primary">Add Category</button>
-                </form>
+<!-- Add Category Form -->
+<div class="card mb-4">
+    <div class="card-header">Add New Category</div>
+    <div class="card-body">
+        <form action="categories.php" method="post">
+            <div class="mb-3">
+                <label for="name" class="form-label">Category Name</label>
+                <input type="text" name="name" id="name" class="form-control" required>
             </div>
-        </div>
+            <button type="submit" name="add" class="btn btn-primary">Add Category</button>
+        </form>
+    </div>
+</div>
 
-        <!-- Categories Table -->
-        <div class="card">
-            <div class="card-header">Existing Categories</div>
-            <div class="card-body">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($categories as $category): ?>
-                            <tr>
-                                <td><?php echo $category['id']; ?></td>
-                                <td><?php echo htmlspecialchars($category['name']); ?></td>
-                                <td>
-                                    <!-- Edit Button and Modal -->
-                                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal<?php echo $category['id']; ?>">Edit</button>
-                                    <div class="modal fade" id="editModal<?php echo $category['id']; ?>" tabindex="-1">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title">Edit Category</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<!-- Categories Table -->
+<div class="card">
+    <div class="card-header">Existing Categories</div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($categories as $category): ?>
+                    <tr>
+                        <td><?php echo $category['id']; ?></td>
+                        <td><?php echo htmlspecialchars($category['name']); ?></td>
+                        <td>
+                            <!-- Edit Button and Modal -->
+                            <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal<?php echo $category['id']; ?>">Edit</button>
+                            <div class="modal fade" id="editModal<?php echo $category['id']; ?>" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Edit Category</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <form action="categories.php" method="post">
+                                                <input type="hidden" name="id" value="<?php echo $category['id']; ?>">
+                                                <div class="mb-3">
+                                                    <label for="name" class="form-label">Category Name</label>
+                                                    <input type="text" name="name" class="form-control" value="<?php echo htmlspecialchars($category['name']); ?>" required>
                                                 </div>
-                                                <div class="modal-body">
-                                                    <form action="categories.php" method="post">
-                                                        <input type="hidden" name="id" value="<?php echo $category['id']; ?>">
-                                                        <div class="mb-3">
-                                                            <label for="name" class="form-label">Category Name</label>
-                                                            <input type="text" name="name" class="form-control" value="<?php echo htmlspecialchars($category['name']); ?>" required>
-                                                        </div>
-                                                        <button type="submit" name="edit" class="btn btn-primary">Save changes</button>
-                                                    </form>
-                                                </div>
-                                            </div>
+                                                <button type="submit" name="edit" class="btn btn-primary">Save changes</button>
+                                            </form>
                                         </div>
                                     </div>
-                                    <!-- Delete Form -->
-                                    <form action="categories.php" method="post" class="d-inline">
-                                        <input type="hidden" name="id" value="<?php echo $category['id']; ?>">
-                                        <button type="submit" name="delete" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                                </div>
+                            </div>
+                            <!-- Delete Form -->
+                            <form action="categories.php" method="post" class="d-inline">
+                                <input type="hidden" name="id" value="<?php echo $category['id']; ?>">
+                                <button type="submit" name="delete" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</div>
+
+<?php
+require_once __DIR__ . '/includes/footer.php';
+?>

@@ -39,12 +39,9 @@ if (isset($_FILES['image'])) {
 
     // Try to upload file
     if (move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
-        // Get the base URL dynamically
-        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
-        $host = $_SERVER['HTTP_HOST'];
-        $base_url = $protocol . $host;
-
-        echo json_encode(['success' => true, 'url' => $base_url . '/' . $target_file]);
+        // Return a relative URL, which is more portable
+        $relative_url = '/' . $target_file;
+        echo json_encode(['success' => true, 'url' => $relative_url]);
     } else {
         echo json_encode(['success' => false, 'error' => 'Sorry, there was an error uploading your file.']);
     }
