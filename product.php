@@ -124,7 +124,14 @@ $selling_types = mysqli_fetch_all($result, MYSQLI_ASSOC);
     </main>
 
     <footer class="bg-dark text-white p-4 text-center mt-5">
-        <p>&copy; <?php echo date('Y'); ?> B2B Fruit Products. All Rights Reserved.</p>
+        <div class="container">
+            <p class="mb-0">&copy; <?php echo date('Y'); ?> B2B Fruit Products. All Rights Reserved.</p>
+            <nav class="nav justify-content-center">
+                <a class="nav-link text-white" href="page.php?slug=about">About Us</a>
+                <a class="nav-link text-white" href="page.php?slug=values">Our Values</a>
+                <a class="nav-link text-white" href="page.php?slug=contact">Contact Us</a>
+            </nav>
+        </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

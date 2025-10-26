@@ -56,3 +56,19 @@ CREATE TABLE `admin_users` (
   `password` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `static_content` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `page_slug` varchar(255) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `content_body` text,
+  `last_updated_by` varchar(255) DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `page_slug` (`page_slug`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO `static_content` (`page_slug`, `title`, `content_body`, `last_updated_by`) VALUES
+('about', 'About Us', '<p>This is the default content for the About Us page. Please update it from the admin panel.</p>', 'system'),
+('values', 'Our Values', '<p>This is the default content for the Our Values page. Please update it from the admin panel.</p>', 'system'),
+('contact', 'Contact Us', '<p>This is the default content for the Contact Us page. Please update it from the admin panel.</p>', 'system');

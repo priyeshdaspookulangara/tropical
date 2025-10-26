@@ -38,6 +38,7 @@ if (!isset($_SESSION['admin_user'])) {
             <a href="selling_types.php" class="list-group-item list-group-item-action">Manage Selling Types</a>
             <a href="fruits.php" class="list-group-item list-group-item-action">Manage Fruits</a>
             <a href="inquiries.php" class="list-group-item list-group-item-action">View Inquiries</a>
+            <a href="pages.php" class="list-group-item list-group-item-action">Manage Static Pages</a>
         </div>
     </div>
 </body>
