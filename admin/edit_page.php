@@ -19,7 +19,6 @@ $slug = sanitize_input($conn, $_GET['slug']);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = sanitize_input($conn, $_POST['title']);
     // Sanitize the content_body to prevent SQL injection.
-    // mysqli_real_escape_string makes the data safe for SQL queries but does not strip HTML tags.
     $content_body = sanitize_input($conn, $_POST['content_body']);
     $last_updated_by = $_SESSION['admin_user'];
 
@@ -50,14 +49,7 @@ if (!$page) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Page: <?php echo htmlspecialchars($page['title']); ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
-    <script>
-        tinymce.init({
-            selector: 'textarea#content_body',
-            plugins: 'lists link image media table code help wordcount',
-            toolbar: 'undo redo | formatselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | code'
-        });
-    </script>
+    <link href="../assets/css/wysiwyg.css" rel="stylesheet">
 </head>
 <body>
     <div class="container mt-4">
@@ -80,12 +72,32 @@ if (!$page) {
                     </div>
                     <div class="mb-3">
                         <label for="content_body" class="form-label">Content</label>
-                        <textarea name="content_body" id="content_body" class="form-control" rows="15"><?php echo htmlspecialchars($page['content_body']); ?></textarea>
+                        <div class="editor-container">
+                            <textarea name="content_body" id="content_body" cols="30" rows="10"><?php echo htmlspecialchars($page['content_body']); ?></textarea>
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
                 </form>
             </div>
         </div>
     </div>
+
+    <!-- Image Upload Modal -->
+    <div id="imageModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Upload Image</h2>
+            <input type="file" id="imageInput" accept="image/*">
+            <button id="uploadButton" class="btn btn-primary mt-2">Upload</button>
+            <p id="uploadMessage" class="mt-2 text-danger"></p>
+        </div>
+    </div>
+
+    <script src="../assets/js/wysiwyg.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initWyzywigEditor('content_body');
+        });
+    </script>
 </body>
 </html>

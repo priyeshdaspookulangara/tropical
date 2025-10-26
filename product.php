@@ -33,45 +33,6 @@ $sql = "
 ";
 $result = mysqli_query($conn, $sql);
 $selling_types = mysqli_fetch_all($result, MYSQLI_ASSOC);
-
-$product_specifications = [
-    '8oz_squat' => [
-        'name' => '8 oz (squat)',
-        'cutting_details' => [
-            ['cutting' => 'Slices', 'net_weight' => 227, 'drained_weight' => 142],
-            ['cutting' => 'Chunks', 'net_weight' => 227, 'drained_weight' => 142],
-            ['cutting' => 'Tidbits', 'net_weight' => 227, 'drained_weight' => 142],
-        ]
-    ],
-    '15oz_tin' => [
-        'name' => '15 oz (tin)',
-        'cutting_details' => [
-            ['cutting' => 'Slices', 'net_weight' => 425, 'drained_weight' => 284],
-            ['cutting' => 'Chunks', 'net_weight' => 425, 'drained_weight' => 284],
-        ]
-    ],
-    '20oz_tin' => [
-        'name' => '20 oz (tin)',
-        'cutting_details' => [
-            ['cutting' => 'Slices', 'net_weight' => 567, 'drained_weight' => 380],
-            ['cutting' => 'Crushed', 'net_weight' => 567, 'drained_weight' => 380],
-        ]
-    ],
-    '30oz_tin' => [
-        'name' => '30 oz (tin)',
-        'cutting_details' => [
-            ['cutting' => 'Slices', 'net_weight' => 850, 'drained_weight' => 567],
-            ['cutting' => 'Chunks', 'net_weight' => 850, 'drained_weight' => 567],
-        ]
-    ],
-];
-
-$active_size_slug = array_keys($product_specifications)[0];
-if (isset($_GET['can_size']) && isset($product_specifications[$_GET['can_size']])) {
-    $active_size_slug = $_GET['can_size'];
-}
-
-$active_specification = $product_specifications[$active_size_slug];
 ?>
 
 <!DOCTYPE html>
@@ -110,38 +71,6 @@ $active_specification = $product_specifications[$active_size_slug];
                 </ul>
 
                 <hr>
-
-                <!-- Specifications Section -->
-                <div id="specifications-section" class="mt-4">
-                    <h4>Specifications</h4>
-                    <div class="d-flex flex-wrap gap-2 mb-3">
-                        <?php foreach ($product_specifications as $slug => $spec): ?>
-                            <a href="?id=<?php echo $fruit_id; ?>&can_size=<?php echo $slug; ?>"
-                               class="btn <?php echo ($slug === $active_size_slug) ? 'btn-primary' : 'btn-outline-primary'; ?>">
-                                <?php echo htmlspecialchars($spec['name']); ?>
-                            </a>
-                        <?php endforeach; ?>
-                    </div>
-
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>Cutting</th>
-                                <th>Net Weight (G)</th>
-                                <th>Drained Weight (G)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($active_specification['cutting_details'] as $detail): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($detail['cutting']); ?></td>
-                                    <td><?php echo htmlspecialchars($detail['net_weight']); ?></td>
-                                    <td><?php echo htmlspecialchars($detail['drained_weight']); ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
 
                 <!-- Inquiry Form -->
                 <div id="inquiry-form-container" class="card mt-4">
