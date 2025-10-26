@@ -58,7 +58,7 @@ while ($row = mysqli_fetch_assoc($result)) {
                                     <img src="<?php echo htmlspecialchars($fruit['image']); ?>" class="card-img-top" alt="<?php echo htmlspecialchars($fruit['name']); ?>">
                                     <div class="card-body">
                                         <h5 class="card-title"><?php echo htmlspecialchars($fruit['name']); ?></h5>
-                                        <a href="product.php?id=<?php echo $fruit['id']; ?>" class="btn btn-primary">View Details</a>
+                                        <a href="product_detail.php?id=<?php echo $fruit['id']; ?>" class="btn btn-primary">View Details</a>
                                     </div>
                                 </div>
                             </div>
