@@ -16,6 +16,7 @@ $packing_media = get_master_data($conn, 'packing_media');
 $packagings = get_master_data($conn, 'packagings');
 $applications = get_master_data($conn, 'applications');
 $trends = get_master_data($conn, 'trends');
+$suppliers = get_master_data($conn, 'suppliers');
 
 function get_master_data($conn, $table_name) {
     $sql = "SELECT * FROM `$table_name` ORDER BY `name`";
@@ -93,6 +94,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             foreach ($_POST['trends'] as $trend_id) {
                 $trend_id = (int)$trend_id;
                 $sql = "INSERT INTO `fruit_trend` (`fruit_id`, `trend_id`) VALUES ($fruit_id, $trend_id)";
+                mysqli_query($conn, $sql);
+            }
+        }
+
+        // Step 6: Link suppliers
+        if (isset($_POST['suppliers'])) {
+            foreach ($_POST['suppliers'] as $supplier_id) {
+                $supplier_id = (int)$supplier_id;
+                $sql = "INSERT INTO `fruit_supplier` (`fruit_id`, `supplier_id`) VALUES ($fruit_id, $supplier_id)";
                 mysqli_query($conn, $sql);
             }
         }
@@ -215,6 +225,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         <hr>
                         <button type="button" class="btn btn-secondary" onclick="prevStep()">Previous</button>
+                        <button type="button" class="btn btn-primary" onclick="nextStep()">Next</button>
+                    </div>
+
+                    <!-- Step 6: Suppliers -->
+                    <div class="form-step" id="step6">
+                        <h4>Step 6: Suppliers</h4>
+                        <div class="mb-3">
+                            <label class="form-label">Select Suppliers</label>
+                            <?php foreach ($suppliers as $supplier): ?>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="suppliers[]" value="<?php echo $supplier['id']; ?>" id="supplier_<?php echo $supplier['id']; ?>">
+                                    <label class="form-check-label" for="supplier_<?php echo $supplier['id']; ?>"><?php echo htmlspecialchars($supplier['name']); ?></label>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <hr>
+                        <button type="button" class="btn btn-secondary" onclick="prevStep()">Previous</button>
                         <button type="submit" class="btn btn-success">Save Fruit</button>
                     </div>
                 </form>
@@ -231,7 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         function nextStep() {
-            if (currentStep < 5) {
+            if (currentStep < 6) {
                 currentStep++;
                 showStep(currentStep);
             }

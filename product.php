@@ -77,6 +77,14 @@ $trends_sql = "
 ";
 $trends_result = mysqli_query($conn, $trends_sql);
 $trends = mysqli_fetch_all($trends_result, MYSQLI_ASSOC);
+
+$suppliers_sql = "
+    SELECT s.name FROM suppliers s
+    JOIN fruit_supplier fs ON s.id = fs.supplier_id
+    WHERE fs.fruit_id = $fruit_id
+";
+$suppliers_result = mysqli_query($conn, $suppliers_sql);
+$suppliers = mysqli_fetch_all($suppliers_result, MYSQLI_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -144,6 +152,15 @@ $trends = mysqli_fetch_all($trends_result, MYSQLI_ASSOC);
                 <ul>
                     <?php foreach ($applications as $app): ?>
                         <li><?php echo htmlspecialchars($app['name']); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+
+                <hr>
+
+                <h4>Suppliers:</h4>
+                <ul>
+                    <?php foreach ($suppliers as $supplier): ?>
+                        <li><?php echo htmlspecialchars($supplier['name']); ?></li>
                     <?php endforeach; ?>
                 </ul>
 
