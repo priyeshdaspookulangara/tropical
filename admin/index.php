@@ -37,6 +37,7 @@ if (!isset($_SESSION['admin_user'])) {
             <a href="categories.php" class="list-group-item list-group-item-action">Manage Categories</a>
             <a href="selling_types.php" class="list-group-item list-group-item-action">Manage Selling Types</a>
             <a href="fruits.php" class="list-group-item list-group-item-action">Manage Fruits</a>
+            <a href="manage_fruit_advanced.php" class="list-group-item list-group-item-action">Add Advanced Fruit</a>
             <a href="inquiries.php" class="list-group-item list-group-item-action">View Inquiries</a>
             <a href="pages.php" class="list-group-item list-group-item-action">Manage Static Pages</a>
         </div>

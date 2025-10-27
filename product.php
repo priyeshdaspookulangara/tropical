@@ -33,6 +33,50 @@ $sql = "
 ";
 $result = mysqli_query($conn, $sql);
 $selling_types = mysqli_fetch_all($result, MYSQLI_ASSOC);
+
+// Fetch advanced details
+$product_lines_sql = "
+    SELECT pl.name as line_name, pf.name as form_name, pm.name as medium_name
+    FROM fruit_product_line_configs fplc
+    JOIN product_lines pl ON fplc.product_line_id = pl.id
+    LEFT JOIN product_forms pf ON fplc.product_form_id = pf.id
+    LEFT JOIN packing_media pm ON fplc.packing_medium_id = pm.id
+    WHERE fplc.fruit_id = $fruit_id
+";
+$product_lines_result = mysqli_query($conn, $product_lines_sql);
+$product_lines = mysqli_fetch_all($product_lines_result, MYSQLI_ASSOC);
+
+$packagings_sql = "
+    SELECT p.name as packaging_name, s.name as storage_name, fp.shelf_life_months, pq.value, pq.unit
+    FROM fruit_packagings fp
+    JOIN packagings p ON fp.packaging_id = p.id
+    JOIN storages s ON fp.storage_id = s.id
+    LEFT JOIN packaging_quantities pq ON fp.id = pq.fruit_packaging_id
+    WHERE fp.fruit_id = $fruit_id
+";
+$packagings_result = mysqli_query($conn, $packagings_sql);
+$packagings = [];
+while($row = mysqli_fetch_assoc($packagings_result)) {
+    $packagings[$row['packaging_name']]['storage'] = $row['storage_name'];
+    $packagings[$row['packaging_name']]['shelf_life'] = $row['shelf_life_months'];
+    $packagings[$row['packaging_name']]['quantities'][] = ['value' => $row['value'], 'unit' => $row['unit']];
+}
+
+$applications_sql = "
+    SELECT a.name FROM applications a
+    JOIN fruit_application fa ON a.id = fa.application_id
+    WHERE fa.fruit_id = $fruit_id
+";
+$applications_result = mysqli_query($conn, $applications_sql);
+$applications = mysqli_fetch_all($applications_result, MYSQLI_ASSOC);
+
+$trends_sql = "
+    SELECT t.name FROM trends t
+    JOIN fruit_trend ft ON t.id = ft.trend_id
+    WHERE ft.fruit_id = $fruit_id
+";
+$trends_result = mysqli_query($conn, $trends_sql);
+$trends = mysqli_fetch_all($trends_result, MYSQLI_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -63,10 +107,52 @@ $selling_types = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
                 <hr>
 
-                <h4>Available As:</h4>
+                <h4>Product Lines:</h4>
                 <ul>
-                    <?php foreach ($selling_types as $type): ?>
-                        <li><?php echo htmlspecialchars($type['name']); ?></li>
+                    <?php foreach ($product_lines as $line): ?>
+                        <li>
+                            <strong><?php echo htmlspecialchars($line['line_name']); ?></strong>
+                            <?php if ($line['form_name']): ?>
+                                (<?php echo htmlspecialchars($line['form_name']); ?>
+                                <?php if ($line['medium_name']): ?>
+                                    in <?php echo htmlspecialchars($line['medium_name']); ?>
+                                <?php endif; ?>
+                                )
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+
+                <hr>
+
+                <h4>Packaging:</h4>
+                <?php foreach ($packagings as $name => $pkg): ?>
+                    <p>
+                        <strong><?php echo htmlspecialchars($name); ?></strong><br>
+                        Storage: <?php echo htmlspecialchars($pkg['storage']); ?><br>
+                        Shelf Life: <?php echo htmlspecialchars($pkg['shelf_life']); ?> months<br>
+                        Quantities:
+                        <?php foreach ($pkg['quantities'] as $qty): ?>
+                            <?php echo htmlspecialchars($qty['value'] . ' ' . $qty['unit']); ?>
+                        <?php endforeach; ?>
+                    </p>
+                <?php endforeach; ?>
+
+                <hr>
+
+                <h4>Applications:</h4>
+                <ul>
+                    <?php foreach ($applications as $app): ?>
+                        <li><?php echo htmlspecialchars($app['name']); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+
+                <hr>
+
+                <h4>Trends:</h4>
+                <ul>
+                    <?php foreach ($trends as $trend): ?>
+                        <li><?php echo htmlspecialchars($trend['name']); ?></li>
                     <?php endforeach; ?>
                 </ul>
 
