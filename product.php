@@ -166,6 +166,15 @@ $suppliers = mysqli_fetch_all($suppliers_result, MYSQLI_ASSOC);
 
                 <hr>
 
+                <h4>Available As:</h4>
+                <ul>
+                    <?php foreach ($selling_types as $type): ?>
+                        <li><?php echo htmlspecialchars($type['name']); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+
+                <hr>
+
                 <h4>Trends:</h4>
                 <ul>
                     <?php foreach ($trends as $trend): ?>
