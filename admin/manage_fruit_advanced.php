@@ -21,8 +21,10 @@ function get_master_data($conn, $table_name) {
     $sql = "SELECT * FROM `$table_name` ORDER BY `name`";
     $result = mysqli_query($conn, $sql);
     $data = [];
-    while ($row = mysqli_fetch_assoc($result)) {
-        $data[] = $row;
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+            $data[] = $row;
+        }
     }
     return $data;
 }
