@@ -27,6 +27,10 @@ $suppliers_sql = "SELECT * FROM suppliers";
 $suppliers_result = mysqli_query($conn, $suppliers_sql);
 $suppliers = mysqli_fetch_all($suppliers_result, MYSQLI_ASSOC);
 
+$product_lines_sql = "SELECT * FROM product_lines";
+$product_lines_result = mysqli_query($conn, $product_lines_sql);
+$product_lines = mysqli_fetch_all($product_lines_result, MYSQLI_ASSOC);
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Add new fruit
@@ -38,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $selected_flavours = $_POST['flavours'] ?? [];
         $selected_colors = $_POST['colors'] ?? [];
         $selected_suppliers = $_POST['suppliers'] ?? [];
+        $selected_product_lines = $_POST['product_lines'] ?? [];
 
         // Handle image upload
         $image_path = null;
@@ -91,6 +96,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_bind_param($stmt, "ii", $fruit_id, $supplier_id);
             mysqli_stmt_execute($stmt);
         }
+
+        foreach ($selected_product_lines as $product_line_id) {
+            $product_line_id = (int)$product_line_id;
+            $stmt = mysqli_prepare($conn, "INSERT INTO fruit_product_lines (fruit_id, product_line_id) VALUES (?, ?)");
+            mysqli_stmt_bind_param($stmt, "ii", $fruit_id, $product_line_id);
+            mysqli_stmt_execute($stmt);
+        }
     }
     // Edit fruit
     elseif (isset($_POST['edit'])) {
@@ -102,6 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $selected_flavours = $_POST['flavours'] ?? [];
         $selected_colors = $_POST['colors'] ?? [];
         $selected_suppliers = $_POST['suppliers'] ?? [];
+        $selected_product_lines = $_POST['product_lines'] ?? [];
 
         // Handle image upload
         $image_sql = "";
@@ -174,6 +187,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             mysqli_stmt_bind_param($stmt, "ii", $id, $supplier_id);
             mysqli_stmt_execute($stmt);
         }
+
+        // Update product_lines
+        $stmt = mysqli_prepare($conn, "DELETE FROM fruit_product_lines WHERE fruit_id = ?");
+        mysqli_stmt_bind_param($stmt, "i", $id);
+        mysqli_stmt_execute($stmt);
+        foreach ($selected_product_lines as $product_line_id) {
+            $product_line_id = (int)$product_line_id;
+            $stmt = mysqli_prepare($conn, "INSERT INTO fruit_product_lines (fruit_id, product_line_id) VALUES (?, ?)");
+            mysqli_stmt_bind_param($stmt, "ii", $id, $product_line_id);
+            mysqli_stmt_execute($stmt);
+        }
     }
     // Delete fruit
     elseif (isset($_POST['delete'])) {
@@ -235,6 +259,14 @@ $fruit_suppliers_result = mysqli_query($conn, $fruit_suppliers_sql);
 $fruit_suppliers = [];
 while ($row = mysqli_fetch_assoc($fruit_suppliers_result)) {
     $fruit_suppliers[$row['fruit_id']][] = $row['supplier_id'];
+}
+
+// Fetch all fruit-product_line relationships
+$fruit_product_lines_sql = "SELECT * FROM fruit_product_lines";
+$fruit_product_lines_result = mysqli_query($conn, $fruit_product_lines_sql);
+$fruit_product_lines = [];
+while ($row = mysqli_fetch_assoc($fruit_product_lines_result)) {
+    $fruit_product_lines[$row['fruit_id']][] = $row['product_line_id'];
 }
 ?>
 
@@ -309,6 +341,17 @@ while ($row = mysqli_fetch_assoc($fruit_suppliers_result)) {
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="checkbox" name="suppliers[]" value="<?php echo $supplier['id']; ?>">
                             <label class="form-check-label"><?php echo htmlspecialchars($supplier['name']); ?></label>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Product Lines</label>
+                <div>
+                    <?php foreach ($product_lines as $product_line): ?>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="product_lines[]" value="<?php echo $product_line['id']; ?>">
+                            <label class="form-check-label"><?php echo htmlspecialchars($product_line['name']); ?></label>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -439,6 +482,19 @@ while ($row = mysqli_fetch_assoc($fruit_suppliers_result)) {
                                                 <div class="form-check form-check-inline">
                                                     <input class="form-check-input" type="checkbox" name="suppliers[]" value="<?php echo $supplier['id']; ?>" <?php echo in_array($supplier['id'], $fruit_supplier_ids) ? 'checked' : ''; ?>>
                                                     <label class="form-check-label"><?php echo htmlspecialchars($supplier['name']); ?></label>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Product Lines</label>
+                                        <div>
+                                            <?php
+                                            $fruit_product_line_ids = $fruit_product_lines[$fruit['id']] ?? [];
+                                            foreach ($product_lines as $product_line): ?>
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input" type="checkbox" name="product_lines[]" value="<?php echo $product_line['id']; ?>" <?php echo in_array($product_line['id'], $fruit_product_line_ids) ? 'checked' : ''; ?>>
+                                                    <label class="form-check-label"><?php echo htmlspecialchars($product_line['name']); ?></label>
                                                 </div>
                                             <?php endforeach; ?>
                                         </div>

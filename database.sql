@@ -143,3 +143,26 @@ INSERT INTO `suppliers` (`name`) VALUES
 ('Organic Farms Ltd.'),
 ('Berry Best'),
 ('Citrus Grove');
+
+CREATE TABLE `product_lines` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `fruit_product_lines` (
+  `fruit_id` int(11) NOT NULL,
+  `product_line_id` int(11) NOT NULL,
+  PRIMARY KEY (`fruit_id`,`product_line_id`),
+  KEY `fruit_id` (`fruit_id`),
+  KEY `product_line_id` (`product_line_id`),
+  CONSTRAINT `fruit_product_lines_ibfk_1` FOREIGN KEY (`fruit_id`) REFERENCES `fruits` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fruit_product_lines_ibfk_2` FOREIGN KEY (`product_line_id`) REFERENCES `product_lines` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO `product_lines` (`name`) VALUES
+('Juice Concentrates'),
+('Frozen Purees'),
+('Dried Fruits'),
+('Canned Goods'),
+('Fresh Cuts');
