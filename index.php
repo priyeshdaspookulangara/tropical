@@ -27,6 +27,11 @@ while ($row = mysqli_fetch_assoc($result)) {
         ];
     }
 }
+
+// Fetch the active banner
+$banner_sql = "SELECT * FROM banners WHERE is_active = 1 LIMIT 1";
+$banner_result = mysqli_query($conn, $banner_sql);
+$banner = mysqli_fetch_assoc($banner_result);
 ?>
 
 <!DOCTYPE html>
@@ -44,6 +49,19 @@ while ($row = mysqli_fetch_assoc($result)) {
             <h1>Our Products</h1>
         </div>
     </header>
+
+    <?php if ($banner): ?>
+    <section class="banner-section">
+        <div class="banner-image" style="background-image: url('<?php echo htmlspecialchars($banner['image_url']); ?>');">
+            <div class="banner-caption" style="color: <?php echo htmlspecialchars($banner['caption_color']); ?>;">
+                <h2><?php echo htmlspecialchars($banner['caption']); ?></h2>
+                <?php if (!empty($banner['button_text']) && !empty($banner['button_url'])): ?>
+                    <a href="<?php echo htmlspecialchars($banner['button_url']); ?>" class="btn btn-primary"><?php echo htmlspecialchars($banner['button_text']); ?></a>
+                <?php endif; ?>
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
 
     <main class="container mt-4">
         <?php foreach ($categories as $category_name => $category_data): ?>

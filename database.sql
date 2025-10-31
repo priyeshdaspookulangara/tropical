@@ -73,3 +73,14 @@ INSERT INTO `static_content` (`page_slug`, `title`, `content_body`, `last_update
 ('values', 'Our Values', '<p>This is the default content for the Our Values page. Please update it from the admin panel.</p>', 'system'),
 ('contact', 'Contact Us', '<p>This is the default content for the Contact Us page. Please update it from the admin panel.</p>', 'system'),
 ('services', 'Our Services', '<p>This is the default content for the Our Services page. Please update it from the admin panel.</p>', 'system');
+
+CREATE TABLE `banners` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `image_url` varchar(255) NOT NULL,
+  `caption` varchar(255) DEFAULT NULL,
+  `caption_color` varchar(7) DEFAULT '#000000',
+  `button_text` varchar(255) DEFAULT NULL,
+  `button_url` varchar(255) DEFAULT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
