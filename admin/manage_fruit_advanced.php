@@ -1,6 +1,9 @@
 <?php
-require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../includes/functions.php';
+// Define the root directory
+define('ROOT_PATH', dirname(__DIR__));
+
+require_once ROOT_PATH . '/config/db.php';
+require_once ROOT_PATH . '/includes/functions.php';
 require_once __DIR__ . '/includes/header.php';
 
 // Fetch categories, selling types, flavours, and colors for forms
@@ -34,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Handle image upload
         $image_path = null;
         if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-            $target_dir = __DIR__ . '/../uploads/';
+            $target_dir = ROOT_PATH . '/uploads/';
             if (!is_dir($target_dir)) {
                 mkdir($target_dir, 0755, true);
             }
@@ -45,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (in_array($file_type, $allowed_types)) {
                 $image_name = uniqid() . '-' . basename($_FILES['image']['name']);
                 $image_path = 'uploads/' . $image_name;
-                move_uploaded_file($_FILES['image']['tmp_name'], __DIR__ . '/../' . $image_path);
+                move_uploaded_file($_FILES['image']['tmp_name'], $target_dir . $image_name);
             } else {
                 $error = "Invalid file type. Only JPG, PNG, and GIF are allowed.";
             }
@@ -86,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Handle image upload
         $image_sql = "";
         if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-            $target_dir = __DIR__ . '/../uploads/';
+            $target_dir = ROOT_PATH . '/uploads/';
             if (!is_dir($target_dir)) {
                 mkdir($target_dir, 0755, true);
             }
@@ -97,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (in_array($file_type, $allowed_types)) {
                 $image_name = uniqid() . '-' . basename($_FILES['image']['name']);
                 $image_path = 'uploads/' . $image_name;
-                move_uploaded_file($_FILES['image']['tmp_name'], __DIR__ . '/../' . $image_path);
+                move_uploaded_file($_FILES['image']['tmp_name'], $target_dir . $image_name);
                 $image_sql = ", image = '$image_path'";
             } else {
                 $error = "Invalid file type. Only JPG, PNG, and GIF are allowed.";
@@ -137,7 +140,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Delete fruit
     elseif (isset($_POST['delete'])) {
         $id = (int)$_POST['id'];
-        // You might want to delete the image file from the server as well
+
+        // First, get the image path
+        $sql = "SELECT image FROM fruits WHERE id = $id";
+        $result = mysqli_query($conn, $sql);
+        if ($row = mysqli_fetch_assoc($result)) {
+            $image_path = $row['image'];
+            if ($image_path && file_exists(ROOT_PATH . '/' . $image_path)) {
+                unlink(ROOT_PATH . '/' . $image_path);
+            }
+        }
+
+        // Then, delete the fruit record
         $sql = "DELETE FROM fruits WHERE id = $id";
         mysqli_query($conn, $sql);
     }

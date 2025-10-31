@@ -1,6 +1,9 @@
 <?php
-require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../includes/functions.php';
+// Define the root directory
+define('ROOT_PATH', dirname(__DIR__));
+
+require_once ROOT_PATH . '/config/db.php';
+require_once ROOT_PATH . '/includes/functions.php';
 require_once __DIR__ . '/includes/header.php';
 
 // Handle form submissions for add, edit, and delete
