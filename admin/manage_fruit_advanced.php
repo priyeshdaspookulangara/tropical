@@ -1,460 +1,440 @@
 <?php
-// Define the root directory
-define('ROOT_PATH', dirname(__DIR__));
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+session_start();
+require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/functions.php';
 
-require_once ROOT_PATH . '/config/db.php';
-require_once ROOT_PATH . '/includes/functions.php';
-require_once __DIR__ . '/includes/header.php';
-
-// Fetch categories, selling types, flavours, colors, and suppliers for forms
-$categories_sql = "SELECT * FROM categories";
-$categories_result = mysqli_query($conn, $categories_sql);
-$categories = mysqli_fetch_all($categories_result, MYSQLI_ASSOC);
-
-$selling_types_sql = "SELECT * FROM selling_types";
-$selling_types_result = mysqli_query($conn, $selling_types_sql);
-$selling_types = mysqli_fetch_all($selling_types_result, MYSQLI_ASSOC);
-
-$flavours_sql = "SELECT * FROM flavours";
-$flavours_result = mysqli_query($conn, $flavours_sql);
-$flavours = mysqli_fetch_all($flavours_result, MYSQLI_ASSOC);
-
-$colors_sql = "SELECT * FROM colors";
-$colors_result = mysqli_query($conn, $colors_sql);
-$colors = mysqli_fetch_all($colors_result, MYSQLI_ASSOC);
-
-$suppliers_sql = "SELECT * FROM suppliers";
-$suppliers_result = mysqli_query($conn, $suppliers_sql);
-$suppliers = mysqli_fetch_all($suppliers_result, MYSQLI_ASSOC);
-
-// Handle form submissions
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Add new fruit
-    if (isset($_POST['add'])) {
-        $name = sanitize_input($conn, $_POST['name']);
-        $category_id = (int)$_POST['category_id'];
-        $description = sanitize_input($conn, $_POST['description']);
-        $selected_selling_types = $_POST['selling_types'] ?? [];
-        $selected_flavours = $_POST['flavours'] ?? [];
-        $selected_colors = $_POST['colors'] ?? [];
-        $selected_suppliers = $_POST['suppliers'] ?? [];
-
-        // Handle image upload
-        $image_path = null;
-        if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-            $target_dir = ROOT_PATH . '/uploads/';
-            if (!is_dir($target_dir)) {
-                mkdir($target_dir, 0755, true);
-            }
-
-            $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
-            $file_type = mime_content_type($_FILES['image']['tmp_name']);
-
-            if (in_array($file_type, $allowed_types)) {
-                $image_name = uniqid() . '-' . basename($_FILES['image']['name']);
-                $image_path = 'uploads/' . $image_name;
-                move_uploaded_file($_FILES['image']['tmp_name'], $target_dir . $image_name);
-            } else {
-                $error = "Invalid file type. Only JPG, PNG, and GIF are allowed.";
-            }
-        }
-
-        $stmt = mysqli_prepare($conn, "INSERT INTO fruits (name, category_id, description, image) VALUES (?, ?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, "siss", $name, $category_id, $description, $image_path);
-        mysqli_stmt_execute($stmt);
-        $fruit_id = mysqli_insert_id($conn);
-
-        foreach ($selected_selling_types as $type_id) {
-            $type_id = (int)$type_id;
-            $stmt = mysqli_prepare($conn, "INSERT INTO fruit_selling_types (fruit_id, selling_type_id) VALUES (?, ?)");
-            mysqli_stmt_bind_param($stmt, "ii", $fruit_id, $type_id);
-            mysqli_stmt_execute($stmt);
-        }
-
-        foreach ($selected_flavours as $flavour_id) {
-            $flavour_id = (int)$flavour_id;
-            $stmt = mysqli_prepare($conn, "INSERT INTO fruit_flavours (fruit_id, flavour_id) VALUES (?, ?)");
-            mysqli_stmt_bind_param($stmt, "ii", $fruit_id, $flavour_id);
-            mysqli_stmt_execute($stmt);
-        }
-
-        foreach ($selected_colors as $color_id) {
-            $color_id = (int)$color_id;
-            $stmt = mysqli_prepare($conn, "INSERT INTO fruit_colors (fruit_id, color_id) VALUES (?, ?)");
-            mysqli_stmt_bind_param($stmt, "ii", $fruit_id, $color_id);
-            mysqli_stmt_execute($stmt);
-        }
-
-        foreach ($selected_suppliers as $supplier_id) {
-            $supplier_id = (int)$supplier_id;
-            $stmt = mysqli_prepare($conn, "INSERT INTO fruit_suppliers (fruit_id, supplier_id) VALUES (?, ?)");
-            mysqli_stmt_bind_param($stmt, "ii", $fruit_id, $supplier_id);
-            mysqli_stmt_execute($stmt);
-        }
-    }
-    // Edit fruit
-    elseif (isset($_POST['edit'])) {
-        $id = (int)$_POST['id'];
-        $name = sanitize_input($conn, $_POST['name']);
-        $category_id = (int)$_POST['category_id'];
-        $description = sanitize_input($conn, $_POST['description']);
-        $selected_selling_types = $_POST['selling_types'] ?? [];
-        $selected_flavours = $_POST['flavours'] ?? [];
-        $selected_colors = $_POST['colors'] ?? [];
-        $selected_suppliers = $_POST['suppliers'] ?? [];
-
-        // Handle image upload
-        $image_sql = "";
-        if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-            $target_dir = ROOT_PATH . '/uploads/';
-            if (!is_dir($target_dir)) {
-                mkdir($target_dir, 0755, true);
-            }
-
-            $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
-            $file_type = mime_content_type($_FILES['image']['tmp_name']);
-
-            if (in_array($file_type, $allowed_types)) {
-                $image_name = uniqid() . '-' . basename($_FILES['image']['name']);
-                $image_path = 'uploads/' . $image_name;
-                move_uploaded_file($_FILES['image']['tmp_name'], $target_dir . $image_name);
-                $stmt = mysqli_prepare($conn, "UPDATE fruits SET name = ?, category_id = ?, description = ?, image = ? WHERE id = ?");
-                mysqli_stmt_bind_param($stmt, "sissi", $name, $category_id, $description, $image_path, $id);
-            } else {
-                $error = "Invalid file type. Only JPG, PNG, and GIF are allowed.";
-                $stmt = mysqli_prepare($conn, "UPDATE fruits SET name = ?, category_id = ?, description = ? WHERE id = ?");
-                mysqli_stmt_bind_param($stmt, "sisi", $name, $category_id, $description, $id);
-            }
-        } else {
-            $stmt = mysqli_prepare($conn, "UPDATE fruits SET name = ?, category_id = ?, description = ? WHERE id = ?");
-            mysqli_stmt_bind_param($stmt, "sisi", $name, $category_id, $description, $id);
-        }
-        mysqli_stmt_execute($stmt);
-
-        // Update selling types
-        $stmt = mysqli_prepare($conn, "DELETE FROM fruit_selling_types WHERE fruit_id = ?");
-        mysqli_stmt_bind_param($stmt, "i", $id);
-        mysqli_stmt_execute($stmt);
-        foreach ($selected_selling_types as $type_id) {
-            $type_id = (int)$type_id;
-            $stmt = mysqli_prepare($conn, "INSERT INTO fruit_selling_types (fruit_id, selling_type_id) VALUES (?, ?)");
-            mysqli_stmt_bind_param($stmt, "ii", $id, $type_id);
-            mysqli_stmt_execute($stmt);
-        }
-
-        // Update flavours
-        $stmt = mysqli_prepare($conn, "DELETE FROM fruit_flavours WHERE fruit_id = ?");
-        mysqli_stmt_bind_param($stmt, "i", $id);
-        mysqli_stmt_execute($stmt);
-        foreach ($selected_flavours as $flavour_id) {
-            $flavour_id = (int)$flavour_id;
-            $stmt = mysqli_prepare($conn, "INSERT INTO fruit_flavours (fruit_id, flavour_id) VALUES (?, ?)");
-            mysqli_stmt_bind_param($stmt, "ii", $id, $flavour_id);
-            mysqli_stmt_execute($stmt);
-        }
-
-        // Update colors
-        $stmt = mysqli_prepare($conn, "DELETE FROM fruit_colors WHERE fruit_id = ?");
-        mysqli_stmt_bind_param($stmt, "i", $id);
-        mysqli_stmt_execute($stmt);
-        foreach ($selected_colors as $color_id) {
-            $color_id = (int)$color_id;
-            $stmt = mysqli_prepare($conn, "INSERT INTO fruit_colors (fruit_id, color_id) VALUES (?, ?)");
-            mysqli_stmt_bind_param($stmt, "ii", $id, $color_id);
-            mysqli_stmt_execute($stmt);
-        }
-
-        // Update suppliers
-        $stmt = mysqli_prepare($conn, "DELETE FROM fruit_suppliers WHERE fruit_id = ?");
-        mysqli_stmt_bind_param($stmt, "i", $id);
-        mysqli_stmt_execute($stmt);
-        foreach ($selected_suppliers as $supplier_id) {
-            $supplier_id = (int)$supplier_id;
-            $stmt = mysqli_prepare($conn, "INSERT INTO fruit_suppliers (fruit_id, supplier_id) VALUES (?, ?)");
-            mysqli_stmt_bind_param($stmt, "ii", $id, $supplier_id);
-            mysqli_stmt_execute($stmt);
-        }
-    }
-    // Delete fruit
-    elseif (isset($_POST['delete'])) {
-        $id = (int)$_POST['id'];
-
-        // First, get the image path
-        $stmt = mysqli_prepare($conn, "SELECT image FROM fruits WHERE id = ?");
-        mysqli_stmt_bind_param($stmt, "i", $id);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
-        if ($row = mysqli_fetch_assoc($result)) {
-            $image_path = $row['image'];
-            if ($image_path && file_exists(ROOT_PATH . '/' . $image_path)) {
-                unlink(ROOT_PATH . '/' . $image_path);
-            }
-        }
-
-        // Then, delete the fruit record
-        $stmt = mysqli_prepare($conn, "DELETE FROM fruits WHERE id = ?");
-        mysqli_stmt_bind_param($stmt, "i", $id);
-        mysqli_stmt_execute($stmt);
-    }
-    header('Location: manage_fruit_advanced.php');
+if (!isset($_SESSION['admin_user'])) {
+    header('Location: login.php');
     exit;
 }
 
-// Fetch all fruits with category names
-$sql = "SELECT f.*, c.name as category_name FROM fruits f JOIN categories c ON f.category_id = c.id ORDER BY f.id DESC";
-$result = mysqli_query($conn, $sql);
-$fruits = mysqli_fetch_all($result, MYSQLI_ASSOC);
+// Fetch master data for form fields
+$storages = get_master_data($conn, 'storages');
+$product_lines = get_master_data($conn, 'product_lines');
+$product_forms = get_master_data($conn, 'product_forms');
+$packing_media = get_master_data($conn, 'packing_media');
+$packagings = get_master_data($conn, 'packagings');
+$applications = get_master_data($conn, 'applications');
+$trends = get_master_data($conn, 'trends');
+$categories = get_master_data($conn, 'categories');
+$flavours = get_master_data($conn, 'flavours');
+$colors = get_master_data($conn, 'colors');
+$suppliers = get_master_data($conn, 'suppliers');
 
-// Fetch all fruit-selling-type relationships
-$fruit_selling_types_sql = "SELECT * FROM fruit_selling_types";
-$fruit_selling_types_result = mysqli_query($conn, $fruit_selling_types_sql);
-$fruit_selling_types = [];
-while ($row = mysqli_fetch_assoc($fruit_selling_types_result)) {
-    $fruit_selling_types[$row['fruit_id']][] = $row['selling_type_id'];
+function get_master_data($conn, $table_name) {
+    $sql = "SELECT * FROM `$table_name` ORDER BY `name`";
+    $result = mysqli_query($conn, $sql);
+    $data = [];
+    while ($row = mysqli_fetch_assoc($result)) {
+        $data[] = $row;
+    }
+    return $data;
 }
 
-// Fetch all fruit-flavour relationships
-$fruit_flavours_sql = "SELECT * FROM fruit_flavours";
-$fruit_flavours_result = mysqli_query($conn, $fruit_flavours_sql);
-$fruit_flavours = [];
-while ($row = mysqli_fetch_assoc($fruit_flavours_result)) {
-    $fruit_flavours[$row['fruit_id']][] = $row['flavour_id'];
-}
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Start transaction
+    mysqli_begin_transaction($conn);
 
-// Fetch all fruit-color relationships
-$fruit_colors_sql = "SELECT * FROM fruit_colors";
-$fruit_colors_result = mysqli_query($conn, $fruit_colors_sql);
-$fruit_colors = [];
-while ($row = mysqli_fetch_assoc($fruit_colors_result)) {
-    $fruit_colors[$row['fruit_id']][] = $row['color_id'];
-}
+    try {
+        // Step 1: Insert base fruit details
+        $name = sanitize_input($conn, $_POST['name']);
+        $origin = sanitize_input($conn, $_POST['origin']);
+        $region = sanitize_input($conn, $_POST['region']);
+        $storage_id = (int)$_POST['storage_id'];
+        $category_id = (int)$_POST['category_id'];
+        $image_path = null;
 
-// Fetch all fruit-supplier relationships
-$fruit_suppliers_sql = "SELECT * FROM fruit_suppliers";
-$fruit_suppliers_result = mysqli_query($conn, $fruit_suppliers_sql);
-$fruit_suppliers = [];
-while ($row = mysqli_fetch_assoc($fruit_suppliers_result)) {
-    $fruit_suppliers[$row['fruit_id']][] = $row['supplier_id'];
+        if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+            $target_dir = __DIR__ . '/../uploads/';
+            if (!is_dir($target_dir)) {
+                mkdir($target_dir, 0755, true);
+            }
+            $image_name = uniqid() . '-' . basename($_FILES['image']['name']);
+            $image_path = 'uploads/' . $image_name;
+            move_uploaded_file($_FILES['image']['tmp_name'], $target_dir . $image_name);
+        }
+
+        $sql = "INSERT INTO `fruits` (`category_id`, `name`, `description`, `image`, `origin`, `region`, `storage_id`) VALUES ($category_id, '$name', '', '$image_path', '$origin', '$region', $storage_id)";
+        mysqli_query($conn, $sql);
+        $fruit_id = mysqli_insert_id($conn);
+
+        // Step 2: Insert product lines
+        if (isset($_POST['product_lines'])) {
+            foreach ($_POST['product_lines'] as $line) {
+                $line_id = (int)$line['id'];
+                $form_id = !empty($line['form_id']) ? (int)$line['form_id'] : 'NULL';
+                $medium_id = !empty($line['medium_id']) ? (int)$line['medium_id'] : 'NULL';
+                $sql = "INSERT INTO `fruit_product_line_configs` (`fruit_id`, `product_line_id`, `product_form_id`, `packing_medium_id`) VALUES ($fruit_id, $line_id, $form_id, $medium_id)";
+                mysqli_query($conn, $sql);
+            }
+        }
+
+        // Step 6: Link flavours, colors, and suppliers
+        if (isset($_POST['flavours'])) {
+            foreach ($_POST['flavours'] as $flavour_id) {
+                $flavour_id = (int)$flavour_id;
+                $sql = "INSERT INTO `fruit_flavours` (`fruit_id`, `flavour_id`) VALUES ($fruit_id, $flavour_id)";
+                mysqli_query($conn, $sql);
+            }
+        }
+        if (isset($_POST['colors'])) {
+            foreach ($_POST['colors'] as $color_id) {
+                $color_id = (int)$color_id;
+                $sql = "INSERT INTO `fruit_colors` (`fruit_id`, `color_id`) VALUES ($fruit_id, $color_id)";
+                mysqli_query($conn, $sql);
+            }
+        }
+        if (isset($_POST['suppliers'])) {
+            foreach ($_POST['suppliers'] as $supplier_id) {
+                $supplier_id = (int)$supplier_id;
+                $sql = "INSERT INTO `fruit_suppliers` (`fruit_id`, `supplier_id`) VALUES ($fruit_id, $supplier_id)";
+                mysqli_query($conn, $sql);
+            }
+        }
+
+        // Step 3: Insert packaging
+        if (isset($_POST['packagings'])) {
+            foreach ($_POST['packagings'] as $pkg) {
+                $pkg_id = (int)$pkg['id'];
+                $pkg_storage_id = (int)$pkg['storage_id'];
+                $shelf_life = !empty($pkg['shelf_life']) ? (int)$pkg['shelf_life'] : 'NULL';
+
+                $sql = "INSERT INTO `fruit_packagings` (`fruit_id`, `packaging_id`, `storage_id`, `shelf_life_months`) VALUES ($fruit_id, $pkg_id, $pkg_storage_id, $shelf_life)";
+                mysqli_query($conn, $sql);
+                $fruit_packaging_id = mysqli_insert_id($conn);
+
+                if (isset($pkg['quantities'])) {
+                    foreach ($pkg['quantities'] as $qty) {
+                        $value = (float)$qty['value'];
+                        $unit = sanitize_input($conn, $qty['unit']);
+                        $sql = "INSERT INTO `packaging_quantities` (`fruit_packaging_id`, `value`, `unit`) VALUES ($fruit_packaging_id, $value, '$unit')";
+                        mysqli_query($conn, $sql);
+                    }
+                }
+            }
+        }
+
+        // Step 4: Link applications
+        if (isset($_POST['applications'])) {
+            foreach ($_POST['applications'] as $app_id) {
+                $app_id = (int)$app_id;
+                $sql = "INSERT INTO `fruit_application` (`fruit_id`, `application_id`) VALUES ($fruit_id, $app_id)";
+                mysqli_query($conn, $sql);
+            }
+        }
+
+        // Step 5: Link trends
+        if (isset($_POST['trends'])) {
+            foreach ($_POST['trends'] as $trend_id) {
+                $trend_id = (int)$trend_id;
+                $sql = "INSERT INTO `fruit_trend` (`fruit_id`, `trend_id`) VALUES ($fruit_id, $trend_id)";
+                mysqli_query($conn, $sql);
+            }
+        }
+
+        // Commit transaction
+        mysqli_commit($conn);
+        $success_message = "Fruit created successfully!";
+
+    } catch (Exception $e) {
+        // Rollback transaction on error
+        mysqli_rollback($conn);
+        $error_message = "Error creating fruit: " . $e->getMessage();
+    }
 }
 ?>
 
-<h1 class="mt-4">Manage Fruits</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Fruit - Advanced</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .form-step { display: none; }
+        .form-step.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>Manage Fruit - Advanced</h2>
+        <a href="fruits.php" class="btn btn-secondary mb-3">Back to Fruits List</a>
 
-<?php if (isset($error)): ?>
-    <div class="alert alert-danger"><?php echo $error; ?></div>
-<?php endif; ?>
+        <?php if (isset($success_message)): ?>
+            <div class="alert alert-success"><?php echo $success_message; ?></div>
+        <?php endif; ?>
+        <?php if (isset($error_message)): ?>
+            <div class="alert alert-danger"><?php echo $error_message; ?></div>
+        <?php endif; ?>
 
-<!-- Add Fruit Form -->
-<div class="card mb-4">
-    <div class="card-header">Add New Fruit</div>
-    <div class="card-body">
-        <form action="manage_fruit_advanced.php" method="post" enctype="multipart/form-data">
-            <div class="mb-3">
-                <label for="name" class="form-label">Fruit Name</label>
-                <input type="text" name="name" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label for="category_id" class="form-label">Category</label>
-                <select name="category_id" class="form-select" required>
-                    <?php foreach ($categories as $category): ?>
-                        <option value="<?php echo $category['id']; ?>"><?php echo htmlspecialchars($category['name']); ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="description" class="form-label">Description</label>
-                <textarea name="description" class="form-control" required></textarea>
-            </div>
-            <div class="mb-3">
-                <label for="image" class="form-label">Image</label>
-                <input type="file" name="image" class="form-control">
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Selling Types</label>
-                <div>
-                    <?php foreach ($selling_types as $type): ?>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" name="selling_types[]" value="<?php echo $type['id']; ?>">
-                            <label class="form-check-label"><?php echo htmlspecialchars($type['name']); ?></label>
+        <div class="card">
+            <div class="card-body">
+                <form action="manage_fruit_advanced.php" method="post" id="fruitForm" enctype="multipart/form-data">
+                    <!-- Step 1: Basic Details -->
+                    <div class="form-step active" id="step1">
+                        <h4>Step 1: Basic Details</h4>
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Fruit Name</label>
+                            <input type="text" name="name" id="name" class="form-control" required>
                         </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Flavours</label>
-                <div>
-                    <?php foreach ($flavours as $flavour): ?>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" name="flavours[]" value="<?php echo $flavour['id']; ?>">
-                            <label class="form-check-label"><?php echo htmlspecialchars($flavour['name']); ?></label>
+                        <div class="mb-3">
+                            <label for="origin" class="form-label">Origin</label>
+                            <input type="text" name="origin" id="origin" class="form-control">
                         </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Colors</label>
-                <div>
-                    <?php foreach ($colors as $color): ?>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" name="colors[]" value="<?php echo $color['id']; ?>">
-                            <label class="form-check-label"><?php echo htmlspecialchars($color['name']); ?></label>
+                        <div class="mb-3">
+                            <label for="region" class="form-label">Region</label>
+                            <input type="text" name="region" id="region" class="form-control">
                         </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Suppliers</label>
-                <div>
-                    <?php foreach ($suppliers as $supplier): ?>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" name="suppliers[]" value="<?php echo $supplier['id']; ?>">
-                            <label class="form-check-label"><?php echo htmlspecialchars($supplier['name']); ?></label>
+                        <div class="mb-3">
+                            <label for="category_id" class="form-label">Category</label>
+                            <select name="category_id" id="category_id" class="form-control" required>
+                                <?php foreach ($categories as $category): ?>
+                                    <option value="<?php echo $category['id']; ?>"><?php echo htmlspecialchars($category['name']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
-                    <?php endforeach; ?>
-                </div>
+                        <div class="mb-3">
+                            <label for="image" class="form-label">Image</label>
+                            <input type="file" name="image" id="image" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="storage_id" class="form-label">Storage Condition</label>
+                            <select name="storage_id" id="storage_id" class="form-control">
+                                <?php foreach ($storages as $storage): ?>
+                                    <option value="<?php echo $storage['id']; ?>"><?php echo htmlspecialchars($storage['name']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="nextStep()">Next</button>
+                    </div>
+
+                    <!-- Step 2: Product Lines -->
+                    <div class="form-step" id="step2">
+                        <h4>Step 2: Product Lines</h4>
+                        <!-- Dynamic product line rows will be added here -->
+                        <div id="productLinesContainer"></div>
+                        <button type="button" class="btn btn-info mt-2" onclick="addProductLine()">Add Product Line</button>
+                        <hr>
+                        <button type="button" class="btn btn-secondary" onclick="prevStep()">Previous</button>
+                        <button type="button" class="btn btn-primary" onclick="nextStep()">Next</button>
+                    </div>
+
+                    <!-- Step 3: Packaging -->
+                    <div class="form-step" id="step3">
+                        <h4>Step 3: Packaging</h4>
+                        <!-- Dynamic packaging rows will be added here -->
+                        <div id="packagingContainer"></div>
+                        <button type="button" class="btn btn-info mt-2" onclick="addPackaging()">Add Packaging</button>
+                        <hr>
+                        <button type="button" class="btn btn-secondary" onclick="prevStep()">Previous</button>
+                        <button type="button" class="btn btn-primary" onclick="nextStep()">Next</button>
+                    </div>
+
+                    <!-- Step 4: Applications -->
+                    <div class="form-step" id="step4">
+                        <h4>Step 4: Applications</h4>
+                        <div class="mb-3">
+                            <label class="form-label">Select Applications</label>
+                            <?php foreach ($applications as $application): ?>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="applications[]" value="<?php echo $application['id']; ?>" id="app_<?php echo $application['id']; ?>">
+                                    <label class="form-check-label" for="app_<?php echo $application['id']; ?>"><?php echo htmlspecialchars($application['name']); ?></label>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <hr>
+                        <button type="button" class="btn btn-secondary" onclick="prevStep()">Previous</button>
+                        <button type="button" class="btn btn-primary" onclick="nextStep()">Next</button>
+                    </div>
+
+                    <!-- Step 5: Trends -->
+                    <div class="form-step" id="step5">
+                        <h4>Step 5: Trends</h4>
+                        <div class="mb-3">
+                            <label class="form-label">Select Trends</label>
+                            <?php foreach ($trends as $trend): ?>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="trends[]" value="<?php echo $trend['id']; ?>" id="trend_<?php echo $trend['id']; ?>">
+                                    <label class="form-check-label" for="trend_<?php echo $trend['id']; ?>"><?php echo htmlspecialchars($trend['name']); ?></label>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <hr>
+                        <button type="button" class="btn btn-secondary" onclick="prevStep()">Previous</button>
+                        <button type="button" class="btn btn-primary" onclick="nextStep()">Next</button>
+                    </div>
+
+                    <!-- Step 6: Attributes -->
+                    <div class="form-step" id="step6">
+                        <h4>Step 6: Attributes</h4>
+                        <div class="mb-3">
+                            <label class="form-label">Select Flavours</label>
+                            <?php foreach ($flavours as $flavour): ?>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="flavours[]" value="<?php echo $flavour['id']; ?>" id="flavour_<?php echo $flavour['id']; ?>">
+                                    <label class="form-check-label" for="flavour_<?php echo $flavour['id']; ?>"><?php echo htmlspecialchars($flavour['name']); ?></label>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Select Colors</label>
+                            <?php foreach ($colors as $color): ?>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="colors[]" value="<?php echo $color['id']; ?>" id="color_<?php echo $color['id']; ?>">
+                                    <label class="form-check-label" for="color_<?php echo $color['id']; ?>"><?php echo htmlspecialchars($color['name']); ?></label>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Select Suppliers</label>
+                            <?php foreach ($suppliers as $supplier): ?>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="suppliers[]" value="<?php echo $supplier['id']; ?>" id="supplier_<?php echo $supplier['id']; ?>">
+                                    <label class="form-check-label" for="supplier_<?php echo $supplier['id']; ?>"><?php echo htmlspecialchars($supplier['name']); ?></label>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <hr>
+                        <button type="button" class="btn btn-secondary" onclick="prevStep()">Previous</button>
+                        <button type="submit" class="btn btn-success">Save Fruit</button>
+                    </div>
+                </form>
             </div>
-            <button type="submit" name="add" class="btn btn-primary">Add Fruit</button>
-        </form>
+        </div>
     </div>
-</div>
 
-<!-- Fruits Table -->
-<div class="card">
-    <div class="card-header">Existing Fruits</div>
-    <div class="card-body">
-        <table class="table table-striped">
-            <thead>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Category</th>
-                <th>Image</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            <?php foreach ($fruits as $fruit): ?>
-                <tr>
-                    <td><?php echo $fruit['id']; ?></td>
-                    <td><?php echo htmlspecialchars($fruit['name']); ?></td>
-                    <td><?php echo htmlspecialchars($fruit['category_name']); ?></td>
-                    <td>
-                        <?php if ($fruit['image']): ?>
-                            <img src="../<?php echo htmlspecialchars($fruit['image']); ?>" alt="<?php echo htmlspecialchars($fruit['name']); ?>" width="50">
-                        <?php endif; ?>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal<?php echo $fruit['id']; ?>">Edit</button>
-                        <form action="manage_fruit_advanced.php" method="post" class="d-inline">
-                            <input type="hidden" name="id" value="<?php echo $fruit['id']; ?>">
-                            <button type="submit" name="delete" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
-                        </form>
-                    </td>
-                </tr>
+    <script>
+        let currentStep = 1;
 
-                <!-- Edit Modal -->
-                <div class="modal fade" id="editModal<?php echo $fruit['id']; ?>" tabindex="-1">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Edit Fruit</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <form action="manage_fruit_advanced.php" method="post" enctype="multipart/form-data">
-                                    <input type="hidden" name="id" value="<?php echo $fruit['id']; ?>">
-                                    <div class="mb-3">
-                                        <label class="form-label">Fruit Name</label>
-                                        <input type="text" name="name" class="form-control" value="<?php echo htmlspecialchars($fruit['name']); ?>" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Category</label>
-                                        <select name="category_id" class="form-select" required>
-                                            <?php foreach ($categories as $category): ?>
-                                                <option value="<?php echo $category['id']; ?>" <?php echo ($category['id'] == $fruit['category_id']) ? 'selected' : ''; ?>>
-                                                    <?php echo htmlspecialchars($category['name']); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Description</label>
-                                        <textarea name="description" class="form-control" required><?php echo htmlspecialchars($fruit['description']); ?></textarea>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Current Image</label>
-                                        <div>
-                                            <?php if ($fruit['image']): ?>
-                                                <img src="../<?php echo htmlspecialchars($fruit['image']); ?>" width="100">
-                                            <?php endif; ?>
-                                        </div>
-                                        <label class="form-label mt-2">New Image (optional)</label>
-                                        <input type="file" name="image" class="form-control">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Selling Types</label>
-                                        <div>
-                                            <?php
-                                            $fruit_selling_type_ids = $fruit_selling_types[$fruit['id']] ?? [];
-                                            foreach ($selling_types as $type): ?>
-                                                <div class="form-check form-check-inline">
-                                                    <input class="form-check-input" type="checkbox" name="selling_types[]" value="<?php echo $type['id']; ?>" <?php echo in_array($type['id'], $fruit_selling_type_ids) ? 'checked' : ''; ?>>
-                                                    <label class="form-check-label"><?php echo htmlspecialchars($type['name']); ?></label>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Flavours</label>
-                                        <div>
-                                            <?php
-                                            $fruit_flavour_ids = $fruit_flavours[$fruit['id']] ?? [];
-                                            foreach ($flavours as $flavour): ?>
-                                                <div class="form-check form-check-inline">
-                                                    <input class="form-check-input" type="checkbox" name="flavours[]" value="<?php echo $flavour['id']; ?>" <?php echo in_array($flavour['id'], $fruit_flavour_ids) ? 'checked' : ''; ?>>
-                                                    <label class="form-check-label"><?php echo htmlspecialchars($flavour['name']); ?></label>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Colors</label>
-                                        <div>
-                                            <?php
-                                            $fruit_color_ids = $fruit_colors[$fruit['id']] ?? [];
-                                            foreach ($colors as $color): ?>
-                                                <div class="form-check form-check-inline">
-                                                    <input class="form-check-input" type="checkbox" name="colors[]" value="<?php echo $color['id']; ?>" <?php echo in_array($color['id'], $fruit_color_ids) ? 'checked' : ''; ?>>
-                                                    <label class="form-check-label"><?php echo htmlspecialchars($color['name']); ?></label>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Suppliers</label>
-                                        <div>
-                                            <?php
-                                            $fruit_supplier_ids = $fruit_suppliers[$fruit['id']] ?? [];
-                                            foreach ($suppliers as $supplier): ?>
-                                                <div class="form-check form-check-inline">
-                                                    <input class="form-check-input" type="checkbox" name="suppliers[]" value="<?php echo $supplier['id']; ?>" <?php echo in_array($supplier['id'], $fruit_supplier_ids) ? 'checked' : ''; ?>>
-                                                    <label class="form-check-label"><?php echo htmlspecialchars($supplier['name']); ?></label>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    </div>
-                                    <button type="submit" name="edit" class="btn btn-primary">Save changes</button>
-                                </form>
-                            </div>
-                        </div>
+        function showStep(step) {
+            document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
+            document.getElementById('step' + step).classList.add('active');
+        }
+
+        function nextStep() {
+            if (currentStep < 6) {
+                currentStep++;
+                showStep(currentStep);
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        }
+
+        // Dynamic form rows for product lines
+        let productLineIndex = 0;
+        function addProductLine() {
+            productLineIndex++;
+            const container = document.getElementById('productLinesContainer');
+            const newRow = document.createElement('div');
+            newRow.className = 'border p-3 mb-3';
+            newRow.innerHTML = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="form-label">Product Line</label>
+                        <select name="product_lines[${productLineIndex}][id]" class="form-control">
+                            <?php foreach ($product_lines as $line): ?>
+                                <option value="<?php echo $line['id']; ?>"><?php echo htmlspecialchars($line['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Product Form (Optional)</label>
+                        <select name="product_lines[${productLineIndex}][form_id]" class="form-control">
+                            <option value="">None</option>
+                            <?php foreach ($product_forms as $form): ?>
+                                <option value="<?php echo $form['id']; ?>"><?php echo htmlspecialchars($form['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Packing Medium (Optional)</label>
+                        <select name="product_lines[${productLineIndex}][medium_id]" class="form-control">
+                            <option value="">None</option>
+                            <?php foreach ($packing_media as $medium): ?>
+                                <option value="<?php echo $medium['id']; ?>"><?php echo htmlspecialchars($medium['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                 </div>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-</div>
+                <button type="button" class="btn btn-danger btn-sm mt-2" onclick="this.parentElement.remove()">Remove</button>
+            `;
+            container.appendChild(newRow);
+        }
 
-<?php
-require_once __DIR__ . '/includes/footer.php';
-?>
+        // Dynamic form rows for packaging
+        let packagingIndex = 0;
+        function addPackaging() {
+            packagingIndex++;
+            const container = document.getElementById('packagingContainer');
+            const newRow = document.createElement('div');
+            newRow.className = 'border p-3 mb-3';
+            newRow.innerHTML = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="form-label">Packaging Type</label>
+                        <select name="packagings[${packagingIndex}][id]" class="form-control">
+                            <?php foreach ($packagings as $pkg): ?>
+                                <option value="<?php echo $pkg['id']; ?>"><?php echo htmlspecialchars($pkg['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Storage</label>
+                        <select name="packagings[${packagingIndex}][storage_id]" class="form-control">
+                            <?php foreach ($storages as $storage): ?>
+                                <option value="<?php echo $storage['id']; ?>"><?php echo htmlspecialchars($storage['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Shelf Life (Months)</label>
+                        <input type="number" name="packagings[${packagingIndex}][shelf_life]" class="form-control">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <h6>Quantities</h6>
+                    <div id="quantitiesContainer_${packagingIndex}"></div>
+                    <button type="button" class="btn btn-secondary btn-sm mt-2" onclick="addQuantity(${packagingIndex})">Add Quantity</button>
+                </div>
+                <button type="button" class="btn btn-danger btn-sm mt-2" onclick="this.parentElement.remove()">Remove Packaging</button>
+            `;
+            container.appendChild(newRow);
+        }
+
+        let quantityCounters = {};
+        function addQuantity(pkgIndex) {
+            if (!quantityCounters[pkgIndex]) {
+                quantityCounters[pkgIndex] = 0;
+            }
+            quantityCounters[pkgIndex]++;
+            const container = document.getElementById(`quantitiesContainer_${pkgIndex}`);
+            const newRow = document.createElement('div');
+            newRow.className = 'row mb-2';
+            newRow.innerHTML = `
+                <div class="col-5">
+                    <input type="number" step="0.01" name="packagings[${pkgIndex}][quantities][${quantityCounters[pkgIndex]}][value]" class="form-control" placeholder="Value" required>
+                </div>
+                <div class="col-5">
+                    <input type="text" name="packagings[${pkgIndex}][quantities][${quantityCounters[pkgIndex]}][unit]" class="form-control" placeholder="Unit (e.g., kg)" required>
+                </div>
+                <div class="col-2">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.parentElement.remove()">X</button>
+                </div>
+            `;
+            container.appendChild(newRow);
+        }
+
+        showStep(currentStep);
+    </script>
+</body>
+</html>

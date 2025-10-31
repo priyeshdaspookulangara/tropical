@@ -51,6 +51,9 @@ $active_page = basename($_SERVER['PHP_SELF']);
                 <a href="manage_suppliers.php" class="list-group-item list-group-item-action bg-dark text-white <?php echo ($active_page == 'manage_suppliers.php') ? 'active' : ''; ?>">
                     <i class="fas fa-truck me-2"></i>Suppliers
                 </a>
+                <a href="manage_product_lines.php" class="list-group-item list-group-item-action bg-dark text-white <?php echo ($active_page == 'manage_product_lines.php') ? 'active' : ''; ?>">
+                    <i class="fas fa-stream me-2"></i>Product Lines
+                </a>
                 <a href="inquiries.php" class="list-group-item list-group-item-action bg-dark text-white <?php echo ($active_page == 'inquiries.php') ? 'active' : ''; ?>">
                     <i class="fas fa-envelope me-2"></i>Inquiries
                 </a>
