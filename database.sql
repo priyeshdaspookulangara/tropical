@@ -105,3 +105,19 @@ CREATE TABLE `fruit_colors` (
   CONSTRAINT `fruit_colors_ibfk_1` FOREIGN KEY (`fruit_id`) REFERENCES `fruits` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fruit_colors_ibfk_2` FOREIGN KEY (`color_id`) REFERENCES `colors` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `suppliers` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `fruit_suppliers` (
+  `fruit_id` int(11) NOT NULL,
+  `supplier_id` int(11) NOT NULL,
+  PRIMARY KEY (`fruit_id`,`supplier_id`),
+  KEY `fruit_id` (`fruit_id`),
+  KEY `supplier_id` (`supplier_id`),
+  CONSTRAINT `fruit_suppliers_ibfk_1` FOREIGN KEY (`fruit_id`) REFERENCES `fruits` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fruit_suppliers_ibfk_2` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

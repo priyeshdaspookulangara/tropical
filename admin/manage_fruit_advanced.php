@@ -1,9 +1,12 @@
 <?php
-require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../includes/functions.php';
+// Define the root directory
+define('ROOT_PATH', dirname(__DIR__));
+
+require_once ROOT_PATH . '/config/db.php';
+require_once ROOT_PATH . '/includes/functions.php';
 require_once __DIR__ . '/includes/header.php';
 
-// Fetch categories, selling types, flavours, and colors for forms
+// Fetch categories, selling types, flavours, colors, and suppliers for forms
 $categories_sql = "SELECT * FROM categories";
 $categories_result = mysqli_query($conn, $categories_sql);
 $categories = mysqli_fetch_all($categories_result, MYSQLI_ASSOC);
@@ -20,6 +23,10 @@ $colors_sql = "SELECT * FROM colors";
 $colors_result = mysqli_query($conn, $colors_sql);
 $colors = mysqli_fetch_all($colors_result, MYSQLI_ASSOC);
 
+$suppliers_sql = "SELECT * FROM suppliers";
+$suppliers_result = mysqli_query($conn, $suppliers_sql);
+$suppliers = mysqli_fetch_all($suppliers_result, MYSQLI_ASSOC);
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Add new fruit
@@ -30,11 +37,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $selected_selling_types = $_POST['selling_types'] ?? [];
         $selected_flavours = $_POST['flavours'] ?? [];
         $selected_colors = $_POST['colors'] ?? [];
+        $selected_suppliers = $_POST['suppliers'] ?? [];
 
         // Handle image upload
         $image_path = null;
         if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-            $target_dir = __DIR__ . '/../uploads/';
+            $target_dir = ROOT_PATH . '/uploads/';
             if (!is_dir($target_dir)) {
                 mkdir($target_dir, 0755, true);
             }
@@ -45,32 +53,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (in_array($file_type, $allowed_types)) {
                 $image_name = uniqid() . '-' . basename($_FILES['image']['name']);
                 $image_path = 'uploads/' . $image_name;
-                move_uploaded_file($_FILES['image']['tmp_name'], __DIR__ . '/../' . $image_path);
+                move_uploaded_file($_FILES['image']['tmp_name'], $target_dir . $image_name);
             } else {
                 $error = "Invalid file type. Only JPG, PNG, and GIF are allowed.";
             }
         }
 
-        $sql = "INSERT INTO fruits (name, category_id, description, image) VALUES ('$name', $category_id, '$description', '$image_path')";
-        mysqli_query($conn, $sql);
+        $stmt = mysqli_prepare($conn, "INSERT INTO fruits (name, category_id, description, image) VALUES (?, ?, ?, ?)");
+        mysqli_stmt_bind_param($stmt, "siss", $name, $category_id, $description, $image_path);
+        mysqli_stmt_execute($stmt);
         $fruit_id = mysqli_insert_id($conn);
 
         foreach ($selected_selling_types as $type_id) {
             $type_id = (int)$type_id;
-            $sql = "INSERT INTO fruit_selling_types (fruit_id, selling_type_id) VALUES ($fruit_id, $type_id)";
-            mysqli_query($conn, $sql);
+            $stmt = mysqli_prepare($conn, "INSERT INTO fruit_selling_types (fruit_id, selling_type_id) VALUES (?, ?)");
+            mysqli_stmt_bind_param($stmt, "ii", $fruit_id, $type_id);
+            mysqli_stmt_execute($stmt);
         }
 
         foreach ($selected_flavours as $flavour_id) {
             $flavour_id = (int)$flavour_id;
-            $sql = "INSERT INTO fruit_flavours (fruit_id, flavour_id) VALUES ($fruit_id, $flavour_id)";
-            mysqli_query($conn, $sql);
+            $stmt = mysqli_prepare($conn, "INSERT INTO fruit_flavours (fruit_id, flavour_id) VALUES (?, ?)");
+            mysqli_stmt_bind_param($stmt, "ii", $fruit_id, $flavour_id);
+            mysqli_stmt_execute($stmt);
         }
 
         foreach ($selected_colors as $color_id) {
             $color_id = (int)$color_id;
-            $sql = "INSERT INTO fruit_colors (fruit_id, color_id) VALUES ($fruit_id, $color_id)";
-            mysqli_query($conn, $sql);
+            $stmt = mysqli_prepare($conn, "INSERT INTO fruit_colors (fruit_id, color_id) VALUES (?, ?)");
+            mysqli_stmt_bind_param($stmt, "ii", $fruit_id, $color_id);
+            mysqli_stmt_execute($stmt);
+        }
+
+        foreach ($selected_suppliers as $supplier_id) {
+            $supplier_id = (int)$supplier_id;
+            $stmt = mysqli_prepare($conn, "INSERT INTO fruit_suppliers (fruit_id, supplier_id) VALUES (?, ?)");
+            mysqli_stmt_bind_param($stmt, "ii", $fruit_id, $supplier_id);
+            mysqli_stmt_execute($stmt);
         }
     }
     // Edit fruit
@@ -82,11 +101,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $selected_selling_types = $_POST['selling_types'] ?? [];
         $selected_flavours = $_POST['flavours'] ?? [];
         $selected_colors = $_POST['colors'] ?? [];
+        $selected_suppliers = $_POST['suppliers'] ?? [];
 
         // Handle image upload
         $image_sql = "";
         if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-            $target_dir = __DIR__ . '/../uploads/';
+            $target_dir = ROOT_PATH . '/uploads/';
             if (!is_dir($target_dir)) {
                 mkdir($target_dir, 0755, true);
             }
@@ -97,49 +117,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (in_array($file_type, $allowed_types)) {
                 $image_name = uniqid() . '-' . basename($_FILES['image']['name']);
                 $image_path = 'uploads/' . $image_name;
-                move_uploaded_file($_FILES['image']['tmp_name'], __DIR__ . '/../' . $image_path);
-                $image_sql = ", image = '$image_path'";
+                move_uploaded_file($_FILES['image']['tmp_name'], $target_dir . $image_name);
+                $stmt = mysqli_prepare($conn, "UPDATE fruits SET name = ?, category_id = ?, description = ?, image = ? WHERE id = ?");
+                mysqli_stmt_bind_param($stmt, "sissi", $name, $category_id, $description, $image_path, $id);
             } else {
                 $error = "Invalid file type. Only JPG, PNG, and GIF are allowed.";
+                $stmt = mysqli_prepare($conn, "UPDATE fruits SET name = ?, category_id = ?, description = ? WHERE id = ?");
+                mysqli_stmt_bind_param($stmt, "sisi", $name, $category_id, $description, $id);
             }
+        } else {
+            $stmt = mysqli_prepare($conn, "UPDATE fruits SET name = ?, category_id = ?, description = ? WHERE id = ?");
+            mysqli_stmt_bind_param($stmt, "sisi", $name, $category_id, $description, $id);
         }
-
-        $sql = "UPDATE fruits SET name = '$name', category_id = $category_id, description = '$description' $image_sql WHERE id = $id";
-        mysqli_query($conn, $sql);
+        mysqli_stmt_execute($stmt);
 
         // Update selling types
-        $sql = "DELETE FROM fruit_selling_types WHERE fruit_id = $id";
-        mysqli_query($conn, $sql);
+        $stmt = mysqli_prepare($conn, "DELETE FROM fruit_selling_types WHERE fruit_id = ?");
+        mysqli_stmt_bind_param($stmt, "i", $id);
+        mysqli_stmt_execute($stmt);
         foreach ($selected_selling_types as $type_id) {
             $type_id = (int)$type_id;
-            $sql = "INSERT INTO fruit_selling_types (fruit_id, selling_type_id) VALUES ($id, $type_id)";
-            mysqli_query($conn, $sql);
+            $stmt = mysqli_prepare($conn, "INSERT INTO fruit_selling_types (fruit_id, selling_type_id) VALUES (?, ?)");
+            mysqli_stmt_bind_param($stmt, "ii", $id, $type_id);
+            mysqli_stmt_execute($stmt);
         }
 
         // Update flavours
-        $sql = "DELETE FROM fruit_flavours WHERE fruit_id = $id";
-        mysqli_query($conn, $sql);
+        $stmt = mysqli_prepare($conn, "DELETE FROM fruit_flavours WHERE fruit_id = ?");
+        mysqli_stmt_bind_param($stmt, "i", $id);
+        mysqli_stmt_execute($stmt);
         foreach ($selected_flavours as $flavour_id) {
             $flavour_id = (int)$flavour_id;
-            $sql = "INSERT INTO fruit_flavours (fruit_id, flavour_id) VALUES ($id, $flavour_id)";
-            mysqli_query($conn, $sql);
+            $stmt = mysqli_prepare($conn, "INSERT INTO fruit_flavours (fruit_id, flavour_id) VALUES (?, ?)");
+            mysqli_stmt_bind_param($stmt, "ii", $id, $flavour_id);
+            mysqli_stmt_execute($stmt);
         }
 
         // Update colors
-        $sql = "DELETE FROM fruit_colors WHERE fruit_id = $id";
-        mysqli_query($conn, $sql);
+        $stmt = mysqli_prepare($conn, "DELETE FROM fruit_colors WHERE fruit_id = ?");
+        mysqli_stmt_bind_param($stmt, "i", $id);
+        mysqli_stmt_execute($stmt);
         foreach ($selected_colors as $color_id) {
             $color_id = (int)$color_id;
-            $sql = "INSERT INTO fruit_colors (fruit_id, color_id) VALUES ($id, $color_id)";
-            mysqli_query($conn, $sql);
+            $stmt = mysqli_prepare($conn, "INSERT INTO fruit_colors (fruit_id, color_id) VALUES (?, ?)");
+            mysqli_stmt_bind_param($stmt, "ii", $id, $color_id);
+            mysqli_stmt_execute($stmt);
+        }
+
+        // Update suppliers
+        $stmt = mysqli_prepare($conn, "DELETE FROM fruit_suppliers WHERE fruit_id = ?");
+        mysqli_stmt_bind_param($stmt, "i", $id);
+        mysqli_stmt_execute($stmt);
+        foreach ($selected_suppliers as $supplier_id) {
+            $supplier_id = (int)$supplier_id;
+            $stmt = mysqli_prepare($conn, "INSERT INTO fruit_suppliers (fruit_id, supplier_id) VALUES (?, ?)");
+            mysqli_stmt_bind_param($stmt, "ii", $id, $supplier_id);
+            mysqli_stmt_execute($stmt);
         }
     }
     // Delete fruit
     elseif (isset($_POST['delete'])) {
         $id = (int)$_POST['id'];
-        // You might want to delete the image file from the server as well
-        $sql = "DELETE FROM fruits WHERE id = $id";
-        mysqli_query($conn, $sql);
+
+        // First, get the image path
+        $stmt = mysqli_prepare($conn, "SELECT image FROM fruits WHERE id = ?");
+        mysqli_stmt_bind_param($stmt, "i", $id);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        if ($row = mysqli_fetch_assoc($result)) {
+            $image_path = $row['image'];
+            if ($image_path && file_exists(ROOT_PATH . '/' . $image_path)) {
+                unlink(ROOT_PATH . '/' . $image_path);
+            }
+        }
+
+        // Then, delete the fruit record
+        $stmt = mysqli_prepare($conn, "DELETE FROM fruits WHERE id = ?");
+        mysqli_stmt_bind_param($stmt, "i", $id);
+        mysqli_stmt_execute($stmt);
     }
     header('Location: manage_fruit_advanced.php');
     exit;
@@ -172,6 +227,14 @@ $fruit_colors_result = mysqli_query($conn, $fruit_colors_sql);
 $fruit_colors = [];
 while ($row = mysqli_fetch_assoc($fruit_colors_result)) {
     $fruit_colors[$row['fruit_id']][] = $row['color_id'];
+}
+
+// Fetch all fruit-supplier relationships
+$fruit_suppliers_sql = "SELECT * FROM fruit_suppliers";
+$fruit_suppliers_result = mysqli_query($conn, $fruit_suppliers_sql);
+$fruit_suppliers = [];
+while ($row = mysqli_fetch_assoc($fruit_suppliers_result)) {
+    $fruit_suppliers[$row['fruit_id']][] = $row['supplier_id'];
 }
 ?>
 
@@ -235,6 +298,17 @@ while ($row = mysqli_fetch_assoc($fruit_colors_result)) {
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="checkbox" name="colors[]" value="<?php echo $color['id']; ?>">
                             <label class="form-check-label"><?php echo htmlspecialchars($color['name']); ?></label>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Suppliers</label>
+                <div>
+                    <?php foreach ($suppliers as $supplier): ?>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="suppliers[]" value="<?php echo $supplier['id']; ?>">
+                            <label class="form-check-label"><?php echo htmlspecialchars($supplier['name']); ?></label>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -352,6 +426,19 @@ while ($row = mysqli_fetch_assoc($fruit_colors_result)) {
                                                 <div class="form-check form-check-inline">
                                                     <input class="form-check-input" type="checkbox" name="colors[]" value="<?php echo $color['id']; ?>" <?php echo in_array($color['id'], $fruit_color_ids) ? 'checked' : ''; ?>>
                                                     <label class="form-check-label"><?php echo htmlspecialchars($color['name']); ?></label>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Suppliers</label>
+                                        <div>
+                                            <?php
+                                            $fruit_supplier_ids = $fruit_suppliers[$fruit['id']] ?? [];
+                                            foreach ($suppliers as $supplier): ?>
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input" type="checkbox" name="suppliers[]" value="<?php echo $supplier['id']; ?>" <?php echo in_array($supplier['id'], $fruit_supplier_ids) ? 'checked' : ''; ?>>
+                                                    <label class="form-check-label"><?php echo htmlspecialchars($supplier['name']); ?></label>
                                                 </div>
                                             <?php endforeach; ?>
                                         </div>

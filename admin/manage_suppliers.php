@@ -10,50 +10,50 @@ require_once __DIR__ . '/includes/header.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add'])) {
         $name = sanitize_input($conn, $_POST['name']);
-        $stmt = mysqli_prepare($conn, "INSERT INTO flavours (name) VALUES (?)");
+        $stmt = mysqli_prepare($conn, "INSERT INTO suppliers (name) VALUES (?)");
         mysqli_stmt_bind_param($stmt, "s", $name);
         mysqli_stmt_execute($stmt);
     } elseif (isset($_POST['edit'])) {
         $id = (int)$_POST['id'];
         $name = sanitize_input($conn, $_POST['name']);
-        $stmt = mysqli_prepare($conn, "UPDATE flavours SET name = ? WHERE id = ?");
+        $stmt = mysqli_prepare($conn, "UPDATE suppliers SET name = ? WHERE id = ?");
         mysqli_stmt_bind_param($stmt, "si", $name, $id);
         mysqli_stmt_execute($stmt);
     } elseif (isset($_POST['delete'])) {
         $id = (int)$_POST['id'];
-        $stmt = mysqli_prepare($conn, "DELETE FROM flavours WHERE id = ?");
+        $stmt = mysqli_prepare($conn, "DELETE FROM suppliers WHERE id = ?");
         mysqli_stmt_bind_param($stmt, "i", $id);
         mysqli_stmt_execute($stmt);
     }
-    header('Location: manage_flavours.php');
+    header('Location: manage_suppliers.php');
     exit;
 }
 
-// Fetch all flavours
-$sql = "SELECT * FROM flavours";
+// Fetch all suppliers
+$sql = "SELECT * FROM suppliers";
 $result = mysqli_query($conn, $sql);
-$flavours = mysqli_fetch_all($result, MYSQLI_ASSOC);
+$suppliers = mysqli_fetch_all($result, MYSQLI_ASSOC);
 ?>
 
-<h1 class="mt-4">Manage Flavours</h1>
+<h1 class="mt-4">Manage Suppliers</h1>
 
-<!-- Add Flavour Form -->
+<!-- Add Supplier Form -->
 <div class="card mb-4">
-    <div class="card-header">Add New Flavour</div>
+    <div class="card-header">Add New Supplier</div>
     <div class="card-body">
-        <form action="manage_flavours.php" method="post">
+        <form action="manage_suppliers.php" method="post">
             <div class="mb-3">
-                <label for="name" class="form-label">Flavour Name</label>
+                <label for="name" class="form-label">Supplier Name</label>
                 <input type="text" name="name" id="name" class="form-control" required>
             </div>
-            <button type="submit" name="add" class="btn btn-primary">Add Flavour</button>
+            <button type="submit" name="add" class="btn btn-primary">Add Supplier</button>
         </form>
     </div>
 </div>
 
-<!-- Flavours Table -->
+<!-- Suppliers Table -->
 <div class="card">
-    <div class="card-header">Existing Flavours</div>
+    <div class="card-header">Existing Suppliers</div>
     <div class="card-body">
         <table class="table table-striped">
             <thead>
@@ -64,26 +64,26 @@ $flavours = mysqli_fetch_all($result, MYSQLI_ASSOC);
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($flavours as $flavour): ?>
+                <?php foreach ($suppliers as $supplier): ?>
                     <tr>
-                        <td><?php echo $flavour['id']; ?></td>
-                        <td><?php echo htmlspecialchars($flavour['name']); ?></td>
+                        <td><?php echo $supplier['id']; ?></td>
+                        <td><?php echo htmlspecialchars($supplier['name']); ?></td>
                         <td>
                             <!-- Edit Button and Modal -->
-                            <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal<?php echo $flavour['id']; ?>">Edit</button>
-                            <div class="modal fade" id="editModal<?php echo $flavour['id']; ?>" tabindex="-1">
+                            <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal<?php echo $supplier['id']; ?>">Edit</button>
+                            <div class="modal fade" id="editModal<?php echo $supplier['id']; ?>" tabindex="-1">
                                 <div class="modal-dialog">
                                     <div class="modal-content">
                                         <div class="modal-header">
-                                            <h5 class="modal-title">Edit Flavour</h5>
+                                            <h5 class="modal-title">Edit Supplier</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                         </div>
                                         <div class="modal-body">
-                                            <form action="manage_flavours.php" method="post">
-                                                <input type="hidden" name="id" value="<?php echo $flavour['id']; ?>">
+                                            <form action="manage_suppliers.php" method="post">
+                                                <input type="hidden" name="id" value="<?php echo $supplier['id']; ?>">
                                                 <div class="mb-3">
-                                                    <label for="name" class="form-label">Flavour Name</label>
-                                                    <input type="text" name="name" class="form-control" value="<?php echo htmlspecialchars($flavour['name']); ?>" required>
+                                                    <label for="name" class="form-label">Supplier Name</label>
+                                                    <input type="text" name="name" class="form-control" value="<?php echo htmlspecialchars($supplier['name']); ?>" required>
                                                 </div>
                                                 <button type="submit" name="edit" class="btn btn-primary">Save changes</button>
                                             </form>
@@ -92,8 +92,8 @@ $flavours = mysqli_fetch_all($result, MYSQLI_ASSOC);
                                 </div>
                             </div>
                             <!-- Delete Form -->
-                            <form action="manage_flavours.php" method="post" class="d-inline">
-                                <input type="hidden" name="id" value="<?php echo $flavour['id']; ?>">
+                            <form action="manage_suppliers.php" method="post" class="d-inline">
+                                <input type="hidden" name="id" value="<?php echo $supplier['id']; ?>">
                                 <button type="submit" name="delete" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
                             </form>
                         </td>

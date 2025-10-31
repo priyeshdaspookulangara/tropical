@@ -1,23 +1,29 @@
 <?php
-require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../includes/functions.php';
+// Define the root directory
+define('ROOT_PATH', dirname(__DIR__));
+
+require_once ROOT_PATH . '/config/db.php';
+require_once ROOT_PATH . '/includes/functions.php';
 require_once __DIR__ . '/includes/header.php';
 
 // Handle form submissions for add, edit, and delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add'])) {
         $name = sanitize_input($conn, $_POST['name']);
-        $sql = "INSERT INTO colors (name) VALUES ('$name')";
-        mysqli_query($conn, $sql);
+        $stmt = mysqli_prepare($conn, "INSERT INTO colors (name) VALUES (?)");
+        mysqli_stmt_bind_param($stmt, "s", $name);
+        mysqli_stmt_execute($stmt);
     } elseif (isset($_POST['edit'])) {
         $id = (int)$_POST['id'];
         $name = sanitize_input($conn, $_POST['name']);
-        $sql = "UPDATE colors SET name = '$name' WHERE id = $id";
-        mysqli_query($conn, $sql);
+        $stmt = mysqli_prepare($conn, "UPDATE colors SET name = ? WHERE id = ?");
+        mysqli_stmt_bind_param($stmt, "si", $name, $id);
+        mysqli_stmt_execute($stmt);
     } elseif (isset($_POST['delete'])) {
         $id = (int)$_POST['id'];
-        $sql = "DELETE FROM colors WHERE id = $id";
-        mysqli_query($conn, $sql);
+        $stmt = mysqli_prepare($conn, "DELETE FROM colors WHERE id = ?");
+        mysqli_stmt_bind_param($stmt, "i", $id);
+        mysqli_stmt_execute($stmt);
     }
     header('Location: manage_colors.php');
     exit;

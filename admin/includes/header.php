@@ -48,6 +48,9 @@ $active_page = basename($_SERVER['PHP_SELF']);
                 <a href="manage_colors.php" class="list-group-item list-group-item-action bg-dark text-white <?php echo ($active_page == 'manage_colors.php') ? 'active' : ''; ?>">
                     <i class="fas fa-palette me-2"></i>Colors
                 </a>
+                <a href="manage_suppliers.php" class="list-group-item list-group-item-action bg-dark text-white <?php echo ($active_page == 'manage_suppliers.php') ? 'active' : ''; ?>">
+                    <i class="fas fa-truck me-2"></i>Suppliers
+                </a>
                 <a href="inquiries.php" class="list-group-item list-group-item-action bg-dark text-white <?php echo ($active_page == 'inquiries.php') ? 'active' : ''; ?>">
                     <i class="fas fa-envelope me-2"></i>Inquiries
                 </a>
