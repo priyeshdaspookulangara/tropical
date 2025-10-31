@@ -39,6 +39,15 @@ $active_page = basename($_SERVER['PHP_SELF']);
                 <a href="fruits.php" class="list-group-item list-group-item-action bg-dark text-white <?php echo ($active_page == 'fruits.php') ? 'active' : ''; ?>">
                     <i class="fas fa-apple-alt me-2"></i>Fruits
                 </a>
+                <a href="manage_fruit_advanced.php" class="list-group-item list-group-item-action bg-dark text-white <?php echo ($active_page == 'manage_fruit_advanced.php') ? 'active' : ''; ?>">
+                    <i class="fas fa-apple-alt me-2"></i>Fruits Advanced
+                </a>
+                <a href="manage_flavours.php" class="list-group-item list-group-item-action bg-dark text-white <?php echo ($active_page == 'manage_flavours.php') ? 'active' : ''; ?>">
+                    <i class="fas fa-seedling me-2"></i>Flavours
+                </a>
+                <a href="manage_colors.php" class="list-group-item list-group-item-action bg-dark text-white <?php echo ($active_page == 'manage_colors.php') ? 'active' : ''; ?>">
+                    <i class="fas fa-palette me-2"></i>Colors
+                </a>
                 <a href="inquiries.php" class="list-group-item list-group-item-action bg-dark text-white <?php echo ($active_page == 'inquiries.php') ? 'active' : ''; ?>">
                     <i class="fas fa-envelope me-2"></i>Inquiries
                 </a>

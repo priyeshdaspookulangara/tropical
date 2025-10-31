@@ -73,3 +73,35 @@ INSERT INTO `static_content` (`page_slug`, `title`, `content_body`, `last_update
 ('values', 'Our Values', '<p>This is the default content for the Our Values page. Please update it from the admin panel.</p>', 'system'),
 ('contact', 'Contact Us', '<p>This is the default content for the Contact Us page. Please update it from the admin panel.</p>', 'system'),
 ('services', 'Our Services', '<p>This is the default content for the Our Services page. Please update it from the admin panel.</p>', 'system');
+
+CREATE TABLE `flavours` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `colors` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `fruit_flavours` (
+  `fruit_id` int(11) NOT NULL,
+  `flavour_id` int(11) NOT NULL,
+  PRIMARY KEY (`fruit_id`,`flavour_id`),
+  KEY `fruit_id` (`fruit_id`),
+  KEY `flavour_id` (`flavour_id`),
+  CONSTRAINT `fruit_flavours_ibfk_1` FOREIGN KEY (`fruit_id`) REFERENCES `fruits` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fruit_flavours_ibfk_2` FOREIGN KEY (`flavour_id`) REFERENCES `flavours` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `fruit_colors` (
+  `fruit_id` int(11) NOT NULL,
+  `color_id` int(11) NOT NULL,
+  PRIMARY KEY (`fruit_id`,`color_id`),
+  KEY `fruit_id` (`fruit_id`),
+  KEY `color_id` (`color_id`),
+  CONSTRAINT `fruit_colors_ibfk_1` FOREIGN KEY (`fruit_id`) REFERENCES `fruits` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fruit_colors_ibfk_2` FOREIGN KEY (`color_id`) REFERENCES `colors` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
