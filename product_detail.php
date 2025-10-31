@@ -11,9 +11,10 @@ $category_name = 'Products'; // Default category name
 if ($product_id > 0) {
     // Fetch main product details
     $sql = "
-        SELECT f.name, f.description, f.image, c.name as category_name
+        SELECT f.name, f.description, f.image, f.origin, f.region, c.name as category_name, s.name as storage_name
         FROM fruits f
         JOIN categories c ON f.category_id = c.id
+        LEFT JOIN storages s ON f.storage_id = s.id
         WHERE f.id = $product_id
     ";
     $result = mysqli_query($conn, $sql);
@@ -21,18 +22,55 @@ if ($product_id > 0) {
 
     if ($product) {
         $category_name = $product['category_name'];
-        // Fetch product features (selling types)
-        $sql_features = "
-            SELECT st.name
-            FROM selling_types st
-            JOIN fruit_selling_types fst ON st.id = fst.selling_type_id
-            WHERE fst.fruit_id = $product_id
-        ";
-        $result_features = mysqli_query($conn, $sql_features);
-        while ($row = mysqli_fetch_assoc($result_features)) {
-            $features[] = $row['name'];
-        }
+
+        // Fetch all related data
+        $product_lines = get_related_data($conn, 'product_lines', 'fruit_product_line_configs', $product_id);
+        $packagings = get_packaging_data($conn, $product_id);
+        $applications = get_related_data($conn, 'applications', 'fruit_application', $product_id);
+        $trends = get_related_data($conn, 'trends', 'fruit_trend', $product_id);
+        $flavours = get_related_data($conn, 'flavours', 'fruit_flavours', $product_id);
+        $colors = get_related_data($conn, 'colors', 'fruit_colors', $product_id);
+        $suppliers = get_related_data($conn, 'suppliers', 'fruit_suppliers', $product_id);
     }
+}
+
+function get_related_data($conn, $table_name, $junction_table, $fruit_id) {
+    $sql = "
+        SELECT t.name
+        FROM `$table_name` t
+        JOIN `$junction_table` jt ON t.id = jt.{$table_name}_id
+        WHERE jt.fruit_id = $fruit_id
+    ";
+    // A bit of a hack to handle different column names in junction tables
+    if ($table_name === 'product_lines') $sql = str_replace('product_lines_id', 'product_line_id', $sql);
+    if ($table_name === 'applications') $sql = str_replace('applications_id', 'application_id', $sql);
+    if ($table_name === 'trends') $sql = str_replace('trends_id', 'trend_id', $sql);
+    if ($table_name === 'flavours') $sql = str_replace('flavours_id', 'flavour_id', $sql);
+    if ($table_name === 'colors') $sql = str_replace('colors_id', 'color_id', $sql);
+    if ($table_name === 'suppliers') $sql = str_replace('suppliers_id', 'supplier_id', $sql);
+
+    $result = mysqli_query($conn, $sql);
+    $data = [];
+    while ($row = mysqli_fetch_assoc($result)) {
+        $data[] = $row;
+    }
+    return $data;
+}
+
+function get_packaging_data($conn, $fruit_id) {
+    $sql = "
+        SELECT p.name, s.name as storage, fp.shelf_life_months
+        FROM `packagings` p
+        JOIN `fruit_packagings` fp ON p.id = fp.packaging_id
+        JOIN `storages` s ON fp.storage_id = s.id
+        WHERE fp.fruit_id = $fruit_id
+    ";
+    $result = mysqli_query($conn, $sql);
+    $data = [];
+    while ($row = mysqli_fetch_assoc($result)) {
+        $data[] = $row;
+    }
+    return $data;
 }
 ?>
 <!DOCTYPE html>
@@ -214,6 +252,15 @@ if ($product_id > 0) {
                 height: 350px;
             }
         }
+
+        /* Tab Styles */
+        .nav-tabs .nav-link {
+            color: #3e940f;
+        }
+        .nav-tabs .nav-link.active {
+            color: #111827;
+            border-color: #dee2e6 #dee2e6 #fff;
+        }
         @media (max-width: 576px) {
             .product-info h1 {
                 font-size: 2rem;
@@ -263,21 +310,82 @@ if ($product_id > 0) {
                             <button class="btn-request-sample">Request Sample</button>
                         </div>
 
-                        <p class="product-description-full"><?php echo nl2br(htmlspecialchars($product['description'])); ?></p>
-
-                        <?php if (!empty($features)): ?>
-                        <div class="features-list-section">
-                            <h2>Key Product Features</h2>
-                            <div class="features-grid">
-                                <?php foreach ($features as $feature): ?>
-                                    <div class="feature-item">
-                                        <span class="feature-icon">★</span>
-                                        <span class="feature-text"><?php echo htmlspecialchars($feature); ?></span>
-                                    </div>
-                                <?php endforeach; ?>
+                        <div class="mt-4">
+                            <ul class="nav nav-tabs" id="productTab" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="true">Details</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="product-lines-tab" data-bs-toggle="tab" data-bs-target="#product-lines" type="button" role="tab" aria-controls="product-lines" aria-selected="false">Product Lines</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="packaging-tab" data-bs-toggle="tab" data-bs-target="#packaging" type="button" role="tab" aria-controls="packaging" aria-selected="false">Packaging</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="applications-tab" data-bs-toggle="tab" data-bs-target="#applications" type="button" role="tab" aria-controls="applications" aria-selected="false">Applications</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="attributes-tab" data-bs-toggle="tab" data-bs-target="#attributes" type="button" role="tab" aria-controls="attributes" aria-selected="false">Attributes</button>
+                                </li>
+                            </ul>
+                            <div class="tab-content pt-3" id="productTabContent">
+                                <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="details-tab">
+                                    <p><?php echo nl2br(htmlspecialchars($product['description'])); ?></p>
+                                    <ul>
+                                        <li><strong>Origin:</strong> <?php echo htmlspecialchars($product['origin']); ?></li>
+                                        <li><strong>Region:</strong> <?php echo htmlspecialchars($product['region']); ?></li>
+                                        <li><strong>Storage:</strong> <?php echo htmlspecialchars($product['storage_name']); ?></li>
+                                    </ul>
+                                </div>
+                                <div class="tab-pane fade" id="product-lines" role="tabpanel" aria-labelledby="product-lines-tab">
+                                    <ul>
+                                        <?php foreach ($product_lines as $line): ?>
+                                            <li><?php echo htmlspecialchars($line['name']); ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                                <div class="tab-pane fade" id="packaging" role="tabpanel" aria-labelledby="packaging-tab">
+                                    <ul>
+                                        <?php foreach ($packagings as $pkg): ?>
+                                            <li><?php echo htmlspecialchars($pkg['name']); ?> (<?php echo htmlspecialchars($pkg['storage']); ?>) - <?php echo htmlspecialchars($pkg['shelf_life_months']); ?> months shelf life</li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                                <div class="tab-pane fade" id="applications" role="tabpanel" aria-labelledby="applications-tab">
+                                    <ul>
+                                        <?php foreach ($applications as $app): ?>
+                                            <li><?php echo htmlspecialchars($app['name']); ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                                <div class="tab-pane fade" id="attributes" role="tabpanel" aria-labelledby="attributes-tab">
+                                    <h5>Flavours</h5>
+                                    <ul>
+                                        <?php foreach ($flavours as $flavour): ?>
+                                            <li><?php echo htmlspecialchars($flavour['name']); ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                    <h5>Colors</h5>
+                                    <ul>
+                                        <?php foreach ($colors as $color): ?>
+                                            <li><?php echo htmlspecialchars($color['name']); ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                    <h5>Suppliers</h5>
+                                    <ul>
+                                        <?php foreach ($suppliers as $supplier): ?>
+                                            <li><?php echo htmlspecialchars($supplier['name']); ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                    <h5>Trends</h5>
+                                    <ul>
+                                        <?php foreach ($trends as $trend): ?>
+                                            <li><?php echo htmlspecialchars($trend['name']); ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
-                        <?php endif; ?>
                     </div>
                 </div>
             </div>

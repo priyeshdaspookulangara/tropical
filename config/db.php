@@ -1,9 +1,9 @@
 <?php
 // Database configuration
-define('DB_HOST', 'your_database_host');
-define('DB_USERNAME', 'your_database_username');
-define('DB_PASSWORD', 'your_database_password');
-define('DB_NAME', 'your_database_name');
+define('DB_HOST', '127.0.0.1');
+define('DB_USERNAME', 'root');
+define('DB_PASSWORD', '');
+define('DB_NAME', 'b2b_fruits');
 
 // Create a new mysqli connection
 $conn = mysqli_connect(DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME);
