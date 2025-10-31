@@ -1,14 +1,19 @@
 <?php
 session_start();
-require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../includes/functions.php';
+// Define the root directory
+define('ROOT_PATH', dirname(__DIR__));
+
+require_once ROOT_PATH . '/config/db.php';
+require_once ROOT_PATH . '/includes/functions.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = sanitize_input($conn, $_POST['username']);
     $password = $_POST['password'];
 
-    $sql = "SELECT * FROM admin_users WHERE username = '$username'";
-    $result = mysqli_query($conn, $sql);
+    $stmt = mysqli_prepare($conn, "SELECT * FROM admin_users WHERE username = ?");
+    mysqli_stmt_bind_param($stmt, "s", $username);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
 
     if ($result && mysqli_num_rows($result) > 0) {
         $user = mysqli_fetch_assoc($result);

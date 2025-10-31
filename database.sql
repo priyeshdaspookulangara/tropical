@@ -121,3 +121,25 @@ CREATE TABLE `fruit_suppliers` (
   CONSTRAINT `fruit_suppliers_ibfk_1` FOREIGN KEY (`fruit_id`) REFERENCES `fruits` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fruit_suppliers_ibfk_2` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Sample data for new tables
+INSERT INTO `flavours` (`name`) VALUES
+('Sweet'),
+('Tart'),
+('Citrus'),
+('Berry'),
+('Tropical');
+
+INSERT INTO `colors` (`name`) VALUES
+('Red'),
+('Yellow'),
+('Green'),
+('Orange'),
+('Purple');
+
+INSERT INTO `suppliers` (`name`) VALUES
+('Global Fruit Co.'),
+('Tropical Imports Inc.'),
+('Organic Farms Ltd.'),
+('Berry Best'),
+('Citrus Grove');
