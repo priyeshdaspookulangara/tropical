@@ -4,15 +4,26 @@ CREATE TABLE `categories` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE `storages` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE `fruits` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `category_id` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
   `description` text NOT NULL,
   `image` varchar(255) DEFAULT NULL,
+  `origin` varchar(255) DEFAULT NULL,
+  `region` varchar(255) DEFAULT NULL,
+  `storage_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `category_id` (`category_id`),
-  CONSTRAINT `fruits_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE
+  KEY `storage_id` (`storage_id`),
+  CONSTRAINT `fruits_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fruits_ibfk_2` FOREIGN KEY (`storage_id`) REFERENCES `storages` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `selling_types` (
@@ -122,47 +133,113 @@ CREATE TABLE `fruit_suppliers` (
   CONSTRAINT `fruit_suppliers_ibfk_2` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Sample data for new tables
-INSERT INTO `flavours` (`name`) VALUES
-('Sweet'),
-('Tart'),
-('Citrus'),
-('Berry'),
-('Tropical');
-
-INSERT INTO `colors` (`name`) VALUES
-('Red'),
-('Yellow'),
-('Green'),
-('Orange'),
-('Purple');
-
-INSERT INTO `suppliers` (`name`) VALUES
-('Global Fruit Co.'),
-('Tropical Imports Inc.'),
-('Organic Farms Ltd.'),
-('Berry Best'),
-('Citrus Grove');
-
 CREATE TABLE `product_lines` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `fruit_product_lines` (
-  `fruit_id` int(11) NOT NULL,
-  `product_line_id` int(11) NOT NULL,
-  PRIMARY KEY (`fruit_id`,`product_line_id`),
-  KEY `fruit_id` (`fruit_id`),
-  KEY `product_line_id` (`product_line_id`),
-  CONSTRAINT `fruit_product_lines_ibfk_1` FOREIGN KEY (`fruit_id`) REFERENCES `fruits` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fruit_product_lines_ibfk_2` FOREIGN KEY (`product_line_id`) REFERENCES `product_lines` (`id`) ON DELETE CASCADE
+CREATE TABLE `product_forms` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO `product_lines` (`name`) VALUES
-('Juice Concentrates'),
-('Frozen Purees'),
-('Dried Fruits'),
-('Canned Goods'),
-('Fresh Cuts');
+CREATE TABLE `packing_media` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `fruit_product_line_configs` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `fruit_id` int(11) NOT NULL,
+  `product_line_id` int(11) NOT NULL,
+  `product_form_id` int(11) DEFAULT NULL,
+  `packing_medium_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fruit_id` (`fruit_id`),
+  KEY `product_line_id` (`product_line_id`),
+  KEY `product_form_id` (`product_form_id`),
+  KEY `packing_medium_id` (`packing_medium_id`),
+  CONSTRAINT `fruit_product_line_configs_ibfk_1` FOREIGN KEY (`fruit_id`) REFERENCES `fruits` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fruit_product_line_configs_ibfk_2` FOREIGN KEY (`product_line_id`) REFERENCES `product_lines` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fruit_product_line_configs_ibfk_3` FOREIGN KEY (`product_form_id`) REFERENCES `product_forms` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fruit_product_line_configs_ibfk_4` FOREIGN KEY (`packing_medium_id`) REFERENCES `packing_media` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `packagings` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `fruit_packagings` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `fruit_id` int(11) NOT NULL,
+  `packaging_id` int(11) NOT NULL,
+  `storage_id` int(11) NOT NULL,
+  `shelf_life_months` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fruit_id` (`fruit_id`),
+  KEY `packaging_id` (`packaging_id`),
+  KEY `storage_id` (`storage_id`),
+  CONSTRAINT `fruit_packagings_ibfk_1` FOREIGN KEY (`fruit_id`) REFERENCES `fruits` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fruit_packagings_ibfk_2` FOREIGN KEY (`packaging_id`) REFERENCES `packagings` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fruit_packagings_ibfk_3` FOREIGN KEY (`storage_id`) REFERENCES `storages` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `packaging_quantities` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `fruit_packaging_id` int(11) NOT NULL,
+  `value` decimal(10,2) NOT NULL,
+  `unit` varchar(50) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fruit_packaging_id` (`fruit_packaging_id`),
+  CONSTRAINT `packaging_quantities_ibfk_1` FOREIGN KEY (`fruit_packaging_id`) REFERENCES `fruit_packagings` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `applications` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `fruit_application` (
+  `fruit_id` int(11) NOT NULL,
+  `application_id` int(11) NOT NULL,
+  PRIMARY KEY (`fruit_id`,`application_id`),
+  KEY `fruit_id` (`fruit_id`),
+  KEY `application_id` (`application_id`),
+  CONSTRAINT `fruit_application_ibfk_1` FOREIGN KEY (`fruit_id`) REFERENCES `fruits` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fruit_application_ibfk_2` FOREIGN KEY (`application_id`) REFERENCES `applications` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `trends` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `fruit_trend` (
+  `fruit_id` int(11) NOT NULL,
+  `trend_id` int(11) NOT NULL,
+  PRIMARY KEY (`fruit_id`,`trend_id`),
+  KEY `fruit_id` (`fruit_id`),
+  KEY `trend_id` (`trend_id`),
+  CONSTRAINT `fruit_trend_ibfk_1` FOREIGN KEY (`fruit_id`) REFERENCES `fruits` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fruit_trend_ibfk_2` FOREIGN KEY (`trend_id`) REFERENCES `trends` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Sample data for new tables
+INSERT INTO `categories` (`name`) VALUES ('Fruits'), ('Vegetables'), ('Herbs');
+INSERT INTO `flavours` (`name`) VALUES ('Sweet'), ('Tart'), ('Citrus'), ('Berry'), ('Tropical');
+INSERT INTO `colors` (`name`) VALUES ('Red'), ('Yellow'), ('Green'), ('Orange'), ('Purple');
+INSERT INTO `suppliers` (`name`) VALUES ('Global Fruit Co.'), ('Tropical Imports Inc.'), ('Organic Farms Ltd.'), ('Berry Best'), ('Citrus Grove');
+INSERT INTO `product_lines` (`name`) VALUES ('Juice Concentrates'), ('Frozen Purees'), ('Dried Fruits'), ('Canned Goods'), ('Fresh Cuts');
+INSERT INTO `storages` (`name`) VALUES ('Ambient'), ('Refrigerated'), ('Frozen');
+INSERT INTO `product_forms` (`name`) VALUES ('Whole'), ('Sliced'), ('Diced'), ('Pureed');
+INSERT INTO `packing_media` (`name`) VALUES ('In Juice'), ('In Syrup'), ('In Water');
+INSERT INTO `packagings` (`name`) VALUES ('Can'), ('Pouch'), ('Jar'), ('Box');
+INSERT INTO `applications` (`name`) VALUES ('Bakery'), ('Beverages'), ('Dairy'), ('Snacks');
+INSERT INTO `trends` (`name`) VALUES ('Organic'), ('Non-GMO'), ('Fair Trade'), ('Sustainable');
