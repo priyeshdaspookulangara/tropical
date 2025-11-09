@@ -45,6 +45,9 @@ $active_page = basename($_SERVER['PHP_SELF']);
                 <a href="pages.php" class="list-group-item list-group-item-action bg-dark text-white <?php echo in_array($active_page, ['pages.php', 'edit_page.php']) ? 'active' : ''; ?>">
                     <i class="fas fa-file-alt me-2"></i>Static Pages
                 </a>
+                <a href="settings.php" class="list-group-item list-group-item-action bg-dark text-white <?php echo ($active_page == 'settings.php') ? 'active' : ''; ?>">
+                    <i class="fas fa-cog me-2"></i>Settings
+                </a>
             </div>
         </div>
         <!-- /#sidebar-wrapper -->

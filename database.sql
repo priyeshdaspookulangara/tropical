@@ -73,3 +73,24 @@ INSERT INTO `static_content` (`page_slug`, `title`, `content_body`, `last_update
 ('values', 'Our Values', '<p>This is the default content for the Our Values page. Please update it from the admin panel.</p>', 'system'),
 ('contact', 'Contact Us', '<p>This is the default content for the Contact Us page. Please update it from the admin panel.</p>', 'system'),
 ('services', 'Our Services', '<p>This is the default content for the Our Services page. Please update it from the admin panel.</p>', 'system');
+
+CREATE TABLE `settings` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `setting_key` varchar(255) NOT NULL,
+  `setting_value` text,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `setting_key` (`setting_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
+('site_logo', ''),
+('site_name', 'Fruit B2B'),
+('favicon', ''),
+('banner_image', ''),
+('banner_title', 'Welcome to our Fruit B2B'),
+('banner_button1_text', 'Shop Now'),
+('banner_button1_link', '#'),
+('banner_button1_style', 'primary'),
+('banner_button2_text', 'Contact Us'),
+('banner_button2_link', '#'),
+('banner_button2_style', 'secondary');
